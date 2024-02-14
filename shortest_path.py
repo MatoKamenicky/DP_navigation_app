@@ -31,9 +31,12 @@ gdf_edges.to_postgis("osm_edges", engine)
 """
 
 #Nearest node to the points of origin and destination
-Xo = 48.15778031493731, 17.12004649807463
-Xd = 48.177666652910766, 17.04614727569561
 
+#Xo = 48.15778031493731, 17.12004649807463
+#Xd = 48.177666652910766, 17.04614727569561
+
+Xo = 48.139948579614924, 17.099163757685766
+Xd = 48.1314118173731, 17.112115551449396
 
 def find_shortest_path(Xo,Xd,graph_proj):
     #Version with good results of origin and destination nodes
@@ -67,8 +70,14 @@ def find_shortest_path(Xo,Xd,graph_proj):
 
     for lat, lon in closed_points:
         nearest_edge = ox.distance.nearest_edges(graph_proj, lon, lat)
-        for u, v in nearest_edge:
-            graph_proj[u][v]['weight'] = 99999999 
+
+        #print(nearest_edge)
+
+        if isinstance(nearest_edge, int):
+            print("Error: No nearest edges found for point:", (lat, lon))
+            continue
+        u, v, _ = nearest_edge
+        graph_proj.add_edge(u, v, length=99999999) 
 
 
     #Shortest path calculation
