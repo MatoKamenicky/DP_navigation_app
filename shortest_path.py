@@ -5,6 +5,7 @@ from shapely.ops import unary_union, polygonize
 import contextily as ctx
 import psycopg2
 from shapely.wkt import loads
+import matplotlib.colors as mcolors
 
 def connect_to_postgres(host, dbname, user, password):
     conn = psycopg2.connect(host=host, dbname=dbname, user=user, password=password)
@@ -68,32 +69,54 @@ def find_shortest_path(Xo,Xd,graph_proj):
         else:
             print("Error: Unable to parse geometry from text:", point_text)
 
+    closed_roads = []
     for lat, lon in closed_points:
         nearest_edge = ox.distance.nearest_edges(graph_proj, lon, lat)
-
-        #print(nearest_edge)
 
         if isinstance(nearest_edge, int):
             print("Error: No nearest edges found for point:", (lat, lon))
             continue
         u, v, _ = nearest_edge
-        graph_proj.add_edge(u, v, length=99999999) 
+        graph_proj.add_edge(u, v, length=99999999)
+        closed_roads.append((u,v))
 
-
+    """
     #Shortest path calculation
     shortest_path = nx.shortest_path(graph_proj, nodes[0], nodes[1], weight='length')
 
     #Plot shortest path
     fig, ax = ox.plot_graph_route(graph_proj, shortest_path, route_color='r', route_linewidth=4, node_size=0)
     plt.show()
-
+    """
     conn.close()
+
+    return closed_roads
     """
     ctx.add_basemap(ax, crs=graph_proj.graph['crs'], source=ctx.providers.OpenStreetMap.Mapnik)
     plt.savefig('my_route_plot.png')
     """
 
-find_shortest_path(Xo,Xd,graph_proj)
+#find_shortest_path(Xo,Xd,graph_proj)
+
+closed_roads = find_shortest_path(Xo,Xd,graph_proj)
+
+
+#Plot the road network with roads with obstacles highlighted  
+def plot_closed_roads(graph, closed_edges):
+    print(closed_edges)
+    edge_colors = []
+    for u, v in graph.edges():
+        if (u, v) in closed_edges:
+            edge_colors.append('red')
+        else:
+            edge_colors.append('grey')    
+    # Plot the road network with closed roads highlighted
+    fig, ax = ox.plot_graph(graph, node_size=0, edge_color=edge_colors, edge_linewidth=0.5)
+    
+    plt.show()
+
+# Find and plot the closed roads
+plot_closed_roads(graph_proj, closed_roads)
 
 #Export shortest path to GeoPackage
 def export_gpkg(graph, shortest_path):
