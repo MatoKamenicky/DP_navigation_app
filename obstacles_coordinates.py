@@ -66,7 +66,7 @@ def write2db(input,table,index):
 
     except (Exception, psycopg2.Error) as error:
         print("Failed to insert record into table", error)
-
+        
     finally:
         if connection:
             cursor.close()
