@@ -199,12 +199,12 @@ def obstacles_nearest_edge():
     #get graph from DB to variable graph
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
 
-    graph = graph_from_db("road_network_ba",conn)
+    graph = graph_from_db_new("road_network_ba",conn)
 
     bridge_obstacles = get_obstacles('bridge_obstacles',conn)
 
     for record in bridge_obstacles:
-        point_id, point_text = record
+        point_id, point_text, u, v = record
         point_geometry = loads(point_text)
         if point_geometry is not None:
             lon, lat = point_geometry.x, point_geometry.y
@@ -237,36 +237,48 @@ def export_gpkg(graph, shortest_path):
 def shortest_path(start,end):
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
     graph = graph_from_db_new("road_network_ba",conn)
+    graph_obstacles = graph_from_db_new("road_network_ba",conn)
     bridge_obstacles = get_obstacles('bridge_obstacles',conn,)
     obstacles_edge = []
 
     
-
-    fig, ax = ox.plot_graph(graph, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
-    plt.show()
-
-    """
+   
     for record in bridge_obstacles:
         edge_record = (record[2],record[3])
         if edge_record[0] is not None and edge_record[1] is not None:
             obstacles_edge.append(edge_record)
     
-    graph.remove_edges_from(obstacles_edge) 
-    """
+    graph_obstacles.remove_edges_from(obstacles_edge) 
 
     """
+    print(len(obstacles_edge))
+    unique = set(obstacles_edge)
+    print(len(unique))
+    
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+    ox.plot_graph(graph, ax=ax1, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
+    ax1.set_title('Graph')
+
+    ox.plot_graph(graph_obstacles, ax=ax2, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
+    ax2.set_title('Graph obstacles')
+
+    plt.show()
+    """
+    
     #nearest node to the points of origin and destination
-    node_Xo = ox.distance.nearest_nodes(graph, start[1], start[0])
-    node_Xd = ox.distance.nearest_nodes(graph, end[1], end[0])
+    node_Xo = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
+    node_Xd = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
     nodes = [node_Xo, node_Xd]
 
     #Shortest path calculation
-    shortest_path = nx.shortest_path(graph, nodes[0], nodes[1], weight='length')
+    shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length')
 
     #Plot shortest path
-    fig, ax = ox.plot_graph_route(graph, shortest_path, route_color='r', route_linewidth=4, node_size=0)
+    fig, ax = ox.plot_graph_route(graph_obstacles, shortest_path, route_color='r', route_linewidth=4, node_size=0)
     plt.show()
-    """
+    
 
 Xo = 48.139948579614924, 17.099163757685766
 Xd = 48.1314118173731, 17.112115551449396
