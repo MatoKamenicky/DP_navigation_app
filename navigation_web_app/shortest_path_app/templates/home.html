@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shortest Path</title>
+</head>
+<body>
+    <h1>Shortest Path Finder</h1>
+    
+    <div id="map" style="height: 400px; width: 100%;"></div>
+    
+    <form action="{% url 'calculate_shortest_path' %}" method="post">
+        {% csrf_token %}
+        <label for="start_lat">Start Latitude:</label>
+        <input type="text" name="start_lat" id="start_lat" required><br>
+        
+        <label for="start_lon">Start Longitude:</label>
+        <input type="text" name="start_lon" id="start_lon" required><br>
+        
+        <label for="end_lat">End Latitude:</label>
+        <input type="text" name="end_lat" id="end_lat" required><br>
+        
+        <label for="end_lon">End Longitude:</label>
+        <input type="text" name="end_lon" id="end_lon" required><br>
+        
+        <button type="submit">Calculate Shortest Path</button>
+    </form>
+
+    <!-- Include Leaflet.js library -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <!-- Include folium library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/folium/0.12.1/folium.js"></script>
+
+    <script>
+        // Initialize the map centered at Bratislava
+        var map = L.map('map').setView([48.1486, 17.1077], 13);
+
+        // Add base map layer using Leaflet
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Add marker for Bratislava
+        L.marker([48.1486, 17.1077]).addTo(map)
+            .bindPopup('Bratislava')
+            .openPopup();
+    </script>
+</body>
+</html>

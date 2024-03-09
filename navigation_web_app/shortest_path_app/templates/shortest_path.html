@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shortest Path</title>
+</head>
+<body>
+    <h1>Shortest Path Calculator</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.start_point.latitude }}
+        {{ form.start_point.longitude }}
+        {{ form.end_point.latitude }}
+        {{ form.end_point.longitude }}
+        <button type="submit">Calculate Shortest Path</button>
+    </form>
+</body>
+</html>
