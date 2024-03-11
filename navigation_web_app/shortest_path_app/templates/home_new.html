@@ -74,7 +74,6 @@
         color: white;
     }
   </style>
-  {{map.header.render|safe}}
 </head>
 <body>
   <div id="sidebar">
@@ -82,15 +81,33 @@
     <ul class="nav flex-column">
         <li><a href="{% url 'home' %}">Home</a>
         <li><a href="{% url 'view_obstacles' %}">View obstacles</a>
-        <li><a href="{% url 'shortest_path' %}">Directions</a>  
+        <li><a href="{% url 'route_view' %}">Directions</a>  
     </ul>
   </div>
-    {% if map %}
-
-    {{map.html.render|safe}}
-    <script>
-        {{map.script.render|safe}}
-    </script>
-    {% endif %}
+  <div id="map"></div>
+<script>
+  var map = L.map('map').setView([48.14225666993606, 17.119759122997106], 12);
+  data={};
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  var gcs = L.esri.Geocoding.geocodeService();
+  var count=0;
+  map.on('click', (e)=>{
+    count+=1;
+    gcs.reverse().latlng(e.latlng).run((err, res)=>{
+      if(err) return;
+      L.marker(res.latlng).addTo(map).bindPopup(res.address.Match_addr).openPopup();
+      k=count.toString()
+      data[k+'lat']=res.latlng['lat'];
+      data[k+'lon']=res.latlng['lng'];
+      if(count==2){
+        const route_url='http://localhost:8000/'+data['1lat']+','+data['1lon']+','+data['2lat']+','+data['2lon'];
+        count=0;
+        window.location.replace(route_url);
+      }
+   });
+});
+</script>
 </body>
 </html>

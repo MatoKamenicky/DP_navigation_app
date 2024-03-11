@@ -1,44 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shortest Path Result</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" rel="stylesheet">
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
     <h1>Shortest Path Result</h1>
-    
-    <div id="map" style="height: 400px; width: 100%;"></div>
-    
-    <p>Start Latitude: {{ start_lat }}</p>
-    <p>Start Longitude: {{ start_lon }}</p>
-    <p>End Latitude: {{ end_lat }}</p>
-    <p>End Longitude: {{ end_lon }}</p>
+    <div id="map"></div>
 
-    <!-- Include Leaflet.js library -->
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Include required Leaflet JS library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
 
-    <!-- Include folium library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/folium/0.12.1/folium.js"></script>
-
-    <script>
-        // Initialize the map centered at Bratislava
-        var map = L.map('map').setView([48.1486, 17.1077], 13);
-
-        // Add base map layer using Leaflet
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-
-        // Add marker for start point
-        L.marker([{ start_lat }, { start_lon }]).addTo(map)
-            .bindPopup('Start Point')
-            .openPopup();
-
-        // Add marker for end point
-        L.marker([{ end_lat }, { end_lon }]).addTo(map)
-            .bindPopup('End Point')
-            .openPopup();
-    </script>
+    <!-- Include Folium generated map HTML -->
+    {{ map_html|safe }}
 </body>
 </html>

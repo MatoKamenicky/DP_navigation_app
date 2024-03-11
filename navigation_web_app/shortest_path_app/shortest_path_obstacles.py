@@ -17,13 +17,23 @@ def connect_to_postgres(host, dbname, user, password):
     conn = psycopg2.connect(host=host, dbname=dbname, user=user, password=password)
     return conn
 
-def get_obstacles(type,conn):
-    conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
-    cursor = conn.cursor()
-    cursor.execute(f"""SELECT index, ST_AsText(geom),nearest_edge_u,nearest_edge_v FROM {type}""")
-    obstacles  = cursor.fetchall()
-    cursor.close()
-    return obstacles 
+def get_obstacles(type,conn,everything=False):
+    if everything == True:
+        cursor = conn.cursor()
+        cursor.execute(f"""SELECT * FROM {type}""")
+        obstacles  = cursor.fetchall()
+        cursor.close()
+
+        return obstacles
+    
+    elif everything == False:
+        conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
+        cursor = conn.cursor()
+        cursor.execute(f"""SELECT index, ST_AsText(geom),nearest_edge_u,nearest_edge_v FROM {type}""")
+        obstacles  = cursor.fetchall()
+        cursor.close()
+
+        return obstacles 
 
 #New way to save road network to DB - using geodataframe
 def road_network_to_db_gdf(place_name,table):
@@ -255,6 +265,8 @@ def shortest_path(start,end):
             obstacles_edge.append(edge_record)
     
     graph_obstacles.remove_edges_from(obstacles_edge) 
+
+    g_nodes, g_edges = ox.graph_to_gdfs(graph_obstacles, nodes=True, edges=True)
     
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
@@ -269,8 +281,6 @@ def shortest_path(start,end):
     """
     
     #nearest node to the points of origin and destination
-    #node_Xo = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
-    #node_Xd = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
 
     node_Xo = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
     node_Xd = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
@@ -280,12 +290,14 @@ def shortest_path(start,end):
     #Shortest path calculation
     shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
 
+    route_nodes = g_nodes.loc[shortest_path]
+
     """
     #Plot shortest path
     fig, ax = ox.plot_graph_route(graph_obstacles, shortest_path, route_color='r', route_linewidth=4, node_size=0)
     plt.show()
     """
-    return shortest_path
+    return route_nodes
 
 """
 Xo = 48.14225666993606, 17.119759122997106
