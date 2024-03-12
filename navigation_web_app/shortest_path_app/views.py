@@ -107,14 +107,27 @@ def home(request):
 
         request.session['shortest_path'] = json.dumps(route)
 
-        my_map = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=10)
+        figure = folium.Figure()
+        m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=10)
         
-        folium.Marker(start_point, popup='Start Point').add_to(my_map)
-        folium.Marker(end_point, popup='End Point').add_to(my_map)
+        folium.Marker(start_point, popup='Start Point').add_to(m)
+        folium.Marker(end_point, popup='End Point').add_to(m)
 
-        map_html = my_map.get_root().render()
+        #raster layers
+        folium.raster_layers.TileLayer('Open Street Map').add_to(m)
+        folium.raster_layers.TileLayer('Stamen Terrain').add_to(m)
+        folium.raster_layers.TileLayer('Stamen Watercolor').add(m)
+        folium.raster_layers.TileLayer('CartoDB Positron').add(m)
+        folium.raster_layers.TileLayer('CartoDB Dark_Matter').add(m)
 
-        return render(request, 'home_new.html', {'form': form, 'shortest_path': route, 'map_html': map_html})
+        folium.LayerControl().add_to(m)
+
+        m.add_to(figure)
+        figure.render()
+        context={'map':figure}
+        #map_html = m.get_root().render()
+
+        return render(request, 'home_new.html', {'form': form, 'shortest_path': route}, context)
     else:
         form = CoordinatesForm()
         return render(request, 'home_new.html', {'form': form})
@@ -129,11 +142,11 @@ def view_obstacles(request):
     m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=12)
 
     for record in obstacles:
-        point_id, point_text, u, v = record
+        point_id, point_text, u, v,name = record
         point_geometry = loads(point_text)
         if point_geometry is not None:
             lon, lat = point_geometry.x, point_geometry.y
-            folium.Marker(location=[lat, lon], popup=point_text).add_to(m)
+            folium.Marker(location=[lat, lon], popup=name).add_to(m)
 
     m.add_to(figure)
     figure.render()
@@ -145,18 +158,28 @@ def route_view(request):
     figure = folium.Figure()
     m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=12)
 
-    start_point = (48.13992218392988, 17.107903950231872)
-    end_point = (48.146347980482865, 17.125244599706768)
+    start_point = (48.16703839996931, 17.078660578675134)
+    end_point = (48.15520311675808, 17.137080529772206)
     route = spo.shortest_path(start_point, end_point)
-    route_line = LineString(list(route.geometry.values))
 
-    m.line()
+    
+    #folium.PolyLine(locations=route,weight=8,color='blue',opacity=0.6).add_to(m)
 
-    folium.PolyLine(route_line,weight=8,color='blue',opacity=0.6).add_to(m)
+
     folium.Marker(location=start_point, popup='Start point').add_to(m)
     folium.Marker(location=end_point, popup='End point').add_to(m)
 
+    """
+    #raster layers
+    folium.raster_layers.TileLayer('Open Street Map',attr='attribution').add_to(m)
+    folium.raster_layers.TileLayer('Stamen Terrain',attr='attribution').add_to(m)
+    folium.raster_layers.TileLayer('Stamen Watercolor',attr='attribution').add(m)
+    folium.raster_layers.TileLayer('CartoDB Positron',attr='attribution').add(m)
+    folium.raster_layers.TileLayer('CartoDB Dark_Matter',attr='attribution').add(m)
 
+    folium.LayerControl().add_to(m)
+    """
+    route.add_to(figure)
     m.add_to(figure)
     figure.render()
     context={'map':figure}

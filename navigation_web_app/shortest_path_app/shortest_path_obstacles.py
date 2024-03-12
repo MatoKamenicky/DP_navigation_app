@@ -8,6 +8,7 @@ from shapely.wkt import loads
 from shapely import wkb
 import geopandas as gpd
 import momepy as mm
+from shapely.geometry import LineString
 
 ox.config(use_cache=True, log_console=True)
 
@@ -29,7 +30,7 @@ def get_obstacles(type,conn,everything=False):
     elif everything == False:
         conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
         cursor = conn.cursor()
-        cursor.execute(f"""SELECT index, ST_AsText(geom),nearest_edge_u,nearest_edge_v FROM {type}""")
+        cursor.execute(f"""SELECT index, ST_AsText(geom),nearest_edge_u,nearest_edge_v,nazov_objektu FROM {type}""")
         obstacles  = cursor.fetchall()
         cursor.close()
 
@@ -217,7 +218,7 @@ def obstacles_nearest_edge():
     bridge_obstacles = get_obstacles('bridge_obstacles',conn)
 
     for record in bridge_obstacles:
-        point_id, point_text, u, v = record
+        point_id, point_text, u, v,name = record
         point_geometry = loads(point_text)
         if point_geometry is not None:
             lon, lat = point_geometry.x, point_geometry.y
@@ -250,7 +251,7 @@ def export_gpkg(graph, shortest_path):
 #function to find the shortest path with obstacles, using graph from postgres DB - for now only plot the graph
 def shortest_path(start,end):
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
-    graph = graph_from_db_new("road_network_ba",conn)
+    #graph = graph_from_db_new("road_network_ba",conn)
     #graph_obstacles = graph_from_db_new("road_network_ba",conn)
     bridge_obstacles = get_obstacles('bridge_obstacles',conn,)
     obstacles_edge = []
@@ -266,7 +267,7 @@ def shortest_path(start,end):
     
     graph_obstacles.remove_edges_from(obstacles_edge) 
 
-    g_nodes, g_edges = ox.graph_to_gdfs(graph_obstacles, nodes=True, edges=True)
+    #g_nodes, g_edges = ox.graph_to_gdfs(graph_obstacles, nodes=True, edges=True)
     
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
@@ -281,7 +282,6 @@ def shortest_path(start,end):
     """
     
     #nearest node to the points of origin and destination
-
     node_Xo = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
     node_Xd = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
     
@@ -289,15 +289,25 @@ def shortest_path(start,end):
 
     #Shortest path calculation
     shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
-
-    route_nodes = g_nodes.loc[shortest_path]
+    """
+    node_positions = nx.spring_layout(graph_obstacles)  # You can use any layout method here
+    coordinates = [node_positions[node] for node in shortest_path]
+    """
+    #route_nodes = g_nodes.loc[shortest_path]
 
     """
     #Plot shortest path
     fig, ax = ox.plot_graph_route(graph_obstacles, shortest_path, route_color='r', route_linewidth=4, node_size=0)
     plt.show()
+    
+    
+
+    route_nodes = g_nodes.loc[route]
+    route_line = LineString(list(route_nodes.geometry.values))
+    route = ox.folium._make_folium_polyline(route_line, popup_val='Shortest path from start to end point')
     """
-    return route_nodes
+    route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
+    return route_map
 
 """
 Xo = 48.14225666993606, 17.119759122997106
