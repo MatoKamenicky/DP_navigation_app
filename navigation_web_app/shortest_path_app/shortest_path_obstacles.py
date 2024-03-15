@@ -266,8 +266,6 @@ def shortest_path(start,end):
             obstacles_edge.append(edge_record)
     
     graph_obstacles.remove_edges_from(obstacles_edge) 
-
-    #g_nodes, g_edges = ox.graph_to_gdfs(graph_obstacles, nodes=True, edges=True)
     
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
@@ -289,23 +287,13 @@ def shortest_path(start,end):
 
     #Shortest path calculation
     shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
-    """
-    node_positions = nx.spring_layout(graph_obstacles)  # You can use any layout method here
-    coordinates = [node_positions[node] for node in shortest_path]
-    """
-    #route_nodes = g_nodes.loc[shortest_path]
 
     """
     #Plot shortest path
     fig, ax = ox.plot_graph_route(graph_obstacles, shortest_path, route_color='r', route_linewidth=4, node_size=0)
     plt.show()
-    
-    
-
-    route_nodes = g_nodes.loc[route]
-    route_line = LineString(list(route_nodes.geometry.values))
-    route = ox.folium._make_folium_polyline(route_line, popup_val='Shortest path from start to end point')
     """
+    
     route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
     return route_map
 

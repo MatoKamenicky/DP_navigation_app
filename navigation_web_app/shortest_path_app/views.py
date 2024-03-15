@@ -1,14 +1,10 @@
-from django.http import HttpResponse
 from django.shortcuts import render
-from flask import redirect
 import folium
 from . import shortest_path_obstacles as spo
 from .forms import CoordinatesForm 
 from .models import Coordinates
-import json
-from shapely.geometry import LineString, Point
 from shapely.wkt import loads
-
+from folium import plugins
 
 
 
@@ -19,54 +15,6 @@ def map_view(request):
     return render(request,'map.html', {'map': m})
 
 
-
-def shortest_path(request):
-    if request.method == 'POST':
-        form = CoordinatesForm(request.POST)
-        if form.is_valid():
-            start_lat = int(form.cleaned_data['start_lat'])
-            start_lon = int(form.cleaned_data['start_lon'])
-            end_lat = int(form.cleaned_data['end_lat'])
-            end_lon = int(form.cleaned_data['end_lon'])
-        
-            start_point = (start_lat, start_lon)
-            end_point = (end_lat, end_lon)
-
-            route = spo.shortest_path(start_point, end_point)
-            Coordinates.objects.create(start_lat=start_lat, start_lon=start_lon, end_lat=end_lat, end_lon=end_lon)
-            return redirect('result')
-    else:
-        form = CoordinatesForm()
-    return render(request, 'transform_xy.html', {'form': form})
-
-"""
-def result(request,start_point,end_point):
-    figure = folium.Figure()
-    route=spo.shortest_path(start_point,end_point)
-    m = folium.Map(location=[(route['start_point'][0]),
-                                 (route['start_point'][1])], 
-                       zoom_start=10)
-    m.add_to(figure)
-    folium.PolyLine(route['route'],weight=8,color='blue',opacity=0.6).add_to(m)
-    folium.Marker(location=route['start_point'],icon=folium.Icon(icon='play', color='green')).add_to(m)
-    folium.Marker(location=route['end_point'],icon=folium.Icon(icon='stop', color='red')).add_to(m)
-    figure.render()
-    context={'map':figure}
-    return render(request,'showroute.html',context)
-"""
-def result(request):
-    shortest_path = request.session.get('shortest_path')  
-    if shortest_path:
-        map_center = shortest_path[0]
-        my_map = folium.Map(location=map_center, zoom_start=10)
-
-        folium.PolyLine(locations=shortest_path, color='blue').add_to(my_map)
-
-        map_html = my_map._repr_html_()
-
-        return render(request, 'result.html', {'map_html': map_html})
-    else:
-        return HttpResponse("Shortest path not found.")
 
 """
 def coor_form(request):
@@ -90,47 +38,44 @@ def coor_form(request):
     return render(request, 'coor_form.html', {'form': form, 'shortest_path': shortest_path})
 """
 
+"""
+#raster layers
+folium.TileLayer('Open Street Map').add_to(m)
+folium.TileLayer('Stamen Terrain').add_to(m)
+folium.TileLayer('Stamen Toner').add_to(m)
+folium.TileLayer('Stamen Watercolor').add_to(m)
+folium.TileLayer('CartoDB Positron').add_to(m)
+folium.TileLayer('CartoDB Dark_Matter').add_to(m)
+"""
+
 def home(request):
-    form = CoordinatesForm(request.POST or None)
-    route = None
-    if request.method == 'POST' and form.is_valid():
-        start_lat = int(form.cleaned_data['start_lat'])
-        start_lon = int(form.cleaned_data['start_lon'])
-        end_lat = int(form.cleaned_data['end_lat'])
-        end_lon = int(form.cleaned_data['end_lon'])
+    figure = folium.Figure()
+    m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=10)
 
-        start_point = (start_lat, start_lon)
-        end_point = (end_lat, end_lon)
+    #view obstacles
+    fg = folium.FeatureGroup(name="Obstacles", show=False).add_to(m)
+    conn = spo.connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
+    obstacles = spo.get_obstacles('bridge_obstacles',conn)
 
-        route = spo.shortest_path(start_point, end_point)
-        route_line = LineString(list(route.geometry.values))
+    for record in obstacles:
+        point_id, point_text, u, v,name = record
+        point_geometry = loads(point_text)
+        if point_geometry is not None:
+            lon, lat = point_geometry.x, point_geometry.y
+            folium.Marker(location=[lat, lon], popup=name).add_to(fg)
 
-        request.session['shortest_path'] = json.dumps(route)
 
-        figure = folium.Figure()
-        m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=10)
-        
-        folium.Marker(start_point, popup='Start Point').add_to(m)
-        folium.Marker(end_point, popup='End Point').add_to(m)
+    folium.TileLayer('OpenStreetMap').add_to(m)
+    folium.TileLayer('CartoDB Positron').add_to(m)
+    folium.TileLayer('CartoDB Voyager').add_to(m)
 
-        #raster layers
-        folium.raster_layers.TileLayer('Open Street Map').add_to(m)
-        folium.raster_layers.TileLayer('Stamen Terrain').add_to(m)
-        folium.raster_layers.TileLayer('Stamen Watercolor').add(m)
-        folium.raster_layers.TileLayer('CartoDB Positron').add(m)
-        folium.raster_layers.TileLayer('CartoDB Dark_Matter').add(m)
+    folium.LayerControl(position='topright',collapsed=True).add_to(m)
 
-        folium.LayerControl().add_to(m)
-
-        m.add_to(figure)
-        figure.render()
-        context={'map':figure}
-        #map_html = m.get_root().render()
-
-        return render(request, 'home_new.html', {'form': form, 'shortest_path': route}, context)
-    else:
-        form = CoordinatesForm()
-        return render(request, 'home_new.html', {'form': form})
+    plugins.Geocoder().add_to(m)
+    m.add_to(figure)
+    figure.render()
+    context={'map':figure}
+    return render(request, 'home.html', context)
 
 
 def view_obstacles(request):
@@ -147,7 +92,8 @@ def view_obstacles(request):
         if point_geometry is not None:
             lon, lat = point_geometry.x, point_geometry.y
             folium.Marker(location=[lat, lon], popup=name).add_to(m)
-
+    
+    
     m.add_to(figure)
     figure.render()
     context={'map':figure}
@@ -179,6 +125,8 @@ def route_view(request):
 
     folium.LayerControl().add_to(m)
     """
+
+    
     route.add_to(figure)
     m.add_to(figure)
     figure.render()
