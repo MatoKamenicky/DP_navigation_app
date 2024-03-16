@@ -5,6 +5,8 @@ from .forms import CoordinatesForm
 from .models import Coordinates
 from shapely.wkt import loads
 from folium import plugins
+import geojson
+
 
 
 
@@ -57,24 +59,37 @@ def home(request):
     conn = spo.connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
     obstacles = spo.get_obstacles('bridge_obstacles',conn)
 
+    features = []
+    
     for record in obstacles:
         point_id, point_text, u, v,name = record
         point_geometry = loads(point_text)
         if point_geometry is not None:
             lon, lat = point_geometry.x, point_geometry.y
-            folium.Marker(location=[lat, lon], popup=name).add_to(fg)
+            feature = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [lon, lat]
+            },
+            "properties": {
+                "name": name
+            }
+            }
+            features.append(feature)
 
+    feature_collection = {
+    "type": "FeatureCollection",
+    "features": features
+    }
+    geojson_data = geojson.loads(geojson.dumps(feature_collection))
 
-    folium.TileLayer('OpenStreetMap').add_to(m)
-    folium.TileLayer('CartoDB Positron').add_to(m)
-    folium.TileLayer('CartoDB Voyager').add_to(m)
-
-    folium.LayerControl(position='topright',collapsed=True).add_to(m)
-
-    plugins.Geocoder().add_to(m)
+    """
     m.add_to(figure)
     figure.render()
     context={'map':figure}
+    """
+    context = {'geojson_data': geojson_data}
     return render(request, 'home.html', context)
 
 

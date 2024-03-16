@@ -129,4 +129,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATICFILES_DIRS = ["C:\GAK\_ING_studium\ING_3_sem\DP_navigation_app\navigation_web_app\shortest_path_app\static\css"]
+STATICFILES_DIRS = ["C:/GAK/_ING_studium/ING_3_sem/DP_navigation_app/navigation_web_app/shortest_path_app/static/css"]
