@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Matko maps</title>
-    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
@@ -40,7 +40,8 @@
     {{ geojson_data|json_script:"geojson_points" }}
 
     <script>
-        var map = L.map('map').setView([48.14, 17.12], 10);
+        var map = L.map('map',{zoomControl: false}).setView([48.14, 17.12], 10);
+        L.control.zoom({position: 'bottomright'}).addTo(map);
 
         osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -63,14 +64,18 @@
         "Google Satellite": googleSat,
         };
 
-        var layerControl = L.control.layers(baseMaps).addTo(map);
+        
 
         let geojson_data = JSON.parse(document.getElementById('geojson_points').textContent);
+        let bridgeFeatureGroup = L.featureGroup();
+        
 
         geojson_data.features.forEach(pointik => {
-            L.marker([pointik.geometry.coordinates[1], pointik.geometry.coordinates[0]], popup=name).addTo(map);
+        L.marker([pointik.geometry.coordinates[1], pointik.geometry.coordinates[0]]).bindPopup(pointik.properties.name).addTo(bridgeFeatureGroup);
         });
+        let overlayMaps = {"Bridge": bridgeFeatureGroup};
 
+        var layerControl = L.control.layers(baseMaps,overlayMaps).addTo(map);
     </script>
 </body>
 </html>

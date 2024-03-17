@@ -17,6 +17,9 @@ body {
 h6 {
     color: hotpink;
 }
+a {
+    color: red
+}
 
 /* #container {
     position: relative;
@@ -35,8 +38,8 @@ h6 {
     position: absolute ; 
     top: 0 ; 
     bottom: 0 ; 
-    left: 0 ;
+    left: 3% ;
     right: 0 ; 
-    width: 100% !;
-    /* z-index: 10; */
+    width: 97% ;
+    z-index: 10; 
 }
