@@ -1,7 +1,45 @@
 var map = L.map('map',{zoomControl: false}).setView([48.14, 17.12], 10);
 L.control.zoom({position: 'bottomright'}).addTo(map);
-// L.Control.geocoder().addTo(map);
-L.control.locate({position:"topright"}).addTo(map);
+
+// Geocoder with marker removable on click
+
+// var geocoder = L.Control.geocoder({
+//   defaultMarkGeocode: false
+// }).addTo(map);
+
+//   var marker;
+
+//   geocoder.on('markgeocode', function(e) {
+//     if (marker) {
+//       map.removeLayer(marker);
+//     }
+//     marker = L.marker(e.geocode.center).addTo(map);
+//   });
+
+//   map.on('click', function(e) {
+//     if (marker) {
+//       map.removeLayer(marker);
+//       marker = null;
+//     }
+//   });
+
+// Geocoder with marker removable with x button
+
+var geocoder = L.Control.geocoder({
+  defaultMarkGeocode: false
+}).addTo(map);
+
+  var marker;
+
+  geocoder.on('markgeocode', function(e) {
+      marker = L.marker(e.geocode.center).addTo(map);
+      marker
+        .bindPopup( "Center Marker" , {removable: true} )
+        .addTo(leafletMap)
+    // marker = L.marker(e.geocode.center).addTo(map);
+  });
+
+
 
 // Add layers
 osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -40,7 +78,3 @@ let overlayMaps = {"Bridge": bridgeFeatureGroup};
 
 var layerControl = L.control.layers(baseMaps,overlayMaps).addTo(map);
 
-// Google search
-L.Control.geocoder({
-    geocoder: L.Control.Geocoder.nominatim()
-  }).addTo(map);

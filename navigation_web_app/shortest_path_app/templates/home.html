@@ -21,12 +21,12 @@
     <!-- Search button -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-    <!-- Google search -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <!-- My location button -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+    <!-- Leaflet Popup Modifier -->
+    <script src="/js/popupMod.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="/css/popupMod.css">
 </head>
 <body>
     <div class="offcanvas offcanvas-start w-25" tabindex="-1" id="offcanvas" data-bs-keyboard="false" data-bs-backdrop="false">
@@ -36,7 +36,6 @@
         </div>
         <div class="offcanvas-body">
             <p><a href="{% url 'home' %}">Home</a></p>
-            <p><a href="{% url 'view_obstacles' %}">View obstacles</a></p>
             <p><a href="{% url 'route_view' %}">Directions</a> </p>
         </div>
     </div>
