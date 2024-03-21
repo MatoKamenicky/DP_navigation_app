@@ -51,11 +51,6 @@ folium.TileLayer('CartoDB Dark_Matter').add_to(m)
 """
 
 def home(request):
-    figure = folium.Figure()
-    m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=10)
-
-    #view obstacles
-    fg = folium.FeatureGroup(name="Obstacles", show=False).add_to(m)
     conn = spo.connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
     obstacles = spo.get_obstacles('bridge_obstacles',conn)
 
@@ -93,6 +88,7 @@ def home(request):
     return render(request, 'home.html', context)
 
 
+#This view is now not very useful, because it is not possible to view the obstacles on the map in the layer control
 def view_obstacles(request):
     conn = spo.connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
 
@@ -117,34 +113,13 @@ def view_obstacles(request):
 
 def route_view(request):
     figure = folium.Figure()
-    m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=12)
 
     start_point = (48.16703839996931, 17.078660578675134)
     end_point = (48.15520311675808, 17.137080529772206)
     route = spo.shortest_path(start_point, end_point)
 
     
-    #folium.PolyLine(locations=route,weight=8,color='blue',opacity=0.6).add_to(m)
 
-
-    folium.Marker(location=start_point, popup='Start point').add_to(m)
-    folium.Marker(location=end_point, popup='End point').add_to(m)
-
-    """
-    #raster layers
-    folium.raster_layers.TileLayer('Open Street Map',attr='attribution').add_to(m)
-    folium.raster_layers.TileLayer('Stamen Terrain',attr='attribution').add_to(m)
-    folium.raster_layers.TileLayer('Stamen Watercolor',attr='attribution').add(m)
-    folium.raster_layers.TileLayer('CartoDB Positron',attr='attribution').add(m)
-    folium.raster_layers.TileLayer('CartoDB Dark_Matter',attr='attribution').add(m)
-
-    folium.LayerControl().add_to(m)
-    """
-
-    
-    route.add_to(figure)
-    m.add_to(figure)
-    figure.render()
     context={'map':figure}
 
     return render(request, 'shortest_path.html', context)
