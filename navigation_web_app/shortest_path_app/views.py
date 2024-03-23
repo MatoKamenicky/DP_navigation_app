@@ -6,6 +6,7 @@ from .models import Coordinates
 from shapely.wkt import loads
 from folium import plugins
 import geojson
+from django.http import JsonResponse
 
 
 
@@ -79,20 +80,14 @@ def home(request):
     }
     geojson_data = geojson.loads(geojson.dumps(feature_collection))
 
-    """
-    m.add_to(figure)
-    figure.render()
-    context={'map':figure}
-    """
     context = {'geojson_data': geojson_data}
     return render(request, 'home.html', context)
 
 
-#This view is now not very useful, because it is not possible to view the obstacles on the map in the layer control
+#This view is now not very useful, because it is possible to view the obstacles on the map in the layer control
 def view_obstacles(request):
     conn = spo.connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
 
-    obstacles_info = spo.get_obstacles('bridge_obstacles',conn,everything=True)
     obstacles = spo.get_obstacles('bridge_obstacles',conn)
     figure = folium.Figure()
     m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=12)
@@ -104,7 +99,6 @@ def view_obstacles(request):
             lon, lat = point_geometry.x, point_geometry.y
             folium.Marker(location=[lat, lon], popup=name).add_to(m)
     
-    
     m.add_to(figure)
     figure.render()
     context={'map':figure}
@@ -112,17 +106,15 @@ def view_obstacles(request):
     return render(request, 'view_obstacles.html', context)
 
 def route_view(request):
-    figure = folium.Figure()
+    
+    data = request.GET.get('data')
 
     start_point = (48.16703839996931, 17.078660578675134)
     end_point = (48.15520311675808, 17.137080529772206)
     route = spo.shortest_path(start_point, end_point)
 
-    
 
-    context={'map':figure}
-
-    return render(request, 'shortest_path.html', context)
+    return JsonResponse(route)
 
 
 def custom_404(request, exception):
