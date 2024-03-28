@@ -110,10 +110,10 @@ def route_view(request):
     
     if request.method == 'POST':
         
-        start_lat = float(request.POST.get('number1'))
-        start_lng = float(request.POST.get('number2'))
-        end_lat = float(request.POST.get('number3'))
-        end_lng = float(request.POST.get('number4'))
+        start_lat = float(request.POST.get('start_lat'))
+        start_lng = float(request.POST.get('start_lon'))
+        end_lat = float(request.POST.get('end_lat'))
+        end_lng = float(request.POST.get('end_lon'))
 
         start_point = (start_lat, start_lng)
         end_point = (end_lat, end_lng)

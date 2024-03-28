@@ -54,6 +54,7 @@
 
     {{ geojson_data|json_script:"geojson_points" }}
 
+    {% csrf_token %}
     <script src="{% static '/js/main.js' %}"></script>
 </body>
 </html>

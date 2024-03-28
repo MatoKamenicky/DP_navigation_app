@@ -152,10 +152,9 @@ function onMapClick(e) {
 
   showButton();
   
-
-  showButton();
-
   // Calculate route
+  startPoint_route = [startPoint.lng, startPoint.lat];
+  endPoint_route = [endPoint.lng, endPoint.lat];
   let route = calculateRoute(startPoint, endPoint);
 
   // Plot shortest path
@@ -169,30 +168,34 @@ function onMapClick(e) {
   }).addTo(map);
 }
 
-
-
-
-
 // Functions using AJAX to send data to Django view
-
 function calculateRoute(startPoint, endPoint) {
+  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  // let data = {
+  //   'start_lat': startPoint.lat,
+  //   'start_lon': startPoint.lng,
+  //   'end_lat': endPoint.lat,
+  //   'end_lon': endPoint.lng
+  // };
+
   let data = {
-    'start_lat': startPoint.lat,
-    'start_lng': startPoint.lng,
-    'end_lat': endPoint.lat,
-    'end_lng': endPoint.lng
+    'start_lat': 48.13981270510992,
+    'start_lon': 17.108043371743726,
+    'end_lat': 48.146124356029965, 
+    'end_lon': 17.127030258137136
   };
 
   $.ajax({
     url: '/directions/',
     type: 'POST',
-    contentType: 'application/json',
+    headers: {'X-CSRFToken': csrftoken},
+    mode: 'same-origin',
     data: JSON.stringify(data),
     success: function(response) {
         console.log(response);
     },
     error: function(xhr, errmsg, err) {
-        console.log(xhr.status + ": " + xhr.responseText); // Log any errors
+        console.log(xhr.status + ": " + xhr.responseText); 
     }
   });
 }
