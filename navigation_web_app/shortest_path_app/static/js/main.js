@@ -60,7 +60,7 @@ L.marker([pointik.geometry.coordinates[1], pointik.geometry.coordinates[0]]).bin
 });
 let overlayMaps = {"Bridge": bridgeFeatureGroup};
 
-var layerControl = L.control.layers(baseMaps,overlayMaps).addTo(map);
+const layerControl = L.control.layers(baseMaps,overlayMaps).addTo(map);
 
 
 
@@ -95,110 +95,108 @@ var layerControl = L.control.layers(baseMaps,overlayMaps).addTo(map);
 
 
 // Start and end point + pass coordinates to django view
-
-function clearMarkers() {
-  if (marker) {
-      map.removeLayer(marker);
-  }
-  if (endPointMarker) {
-      map.removeLayer(endPointMarker);
-  }
-  startPoint = null;
-  endPoint = null;
-}
-
-
 var startPoint = null;
 var endPoint = null;
 
+var greenIcon = L.icon({
+  iconUrl: 'leaf-green.png',
+});
+
+var redIcon = L.icon({
+  iconUrl: 'leaf-green.png',
+});
+
 function onMapClick(e) {
+  let route_markers = L.featureGroup().addTo(map);
+
   if (startPoint === null) {
-    var button = L.DomUtil.create('button', 'popup-button');
+    let button = L.DomUtil.create('button', 'popup-button');
     button.innerHTML = 'Direction from here';
     button.id = 'popup_btn';
 
     startPoint = e.latlng;
-    marker = L.marker(startPoint)
+    let marker_button = L.marker(startPoint)
       .addTo(map)
       .bindPopup(button)
       .openPopup();
+    route_markers.addLayer(marker_button);
 
-    button.addEventListener('click', function() {;
-        marker = L.marker(startPoint)
-          .addTo(map)
-          .bindPopup("Start point")
-          .openPopup();
+    button.addEventListener('click', function() {
+      route_markers.clearLayers();
+      marker_start = L.marker(startPoint)
+        .addTo(map)
+        .bindPopup("Start point")
+        .openPopup();
+      route_markers.addLayer(marker_start);
     });
-
-  } else if (endPoint === null) {
     
+    
+  } else if (endPoint === null) {
     endPoint = e.latlng;
-    L.marker(endPoint).addTo(map).bindPopup("Ending point").openPopup();
-    // // Calculate route
-    // calculateRoute(startPoint, endPoint);
-
-    // // Plot shortest path
-    // let geojson_data = JSON.parse(document.getElementById('geojson_shortest_path').textContent);
-
-    // geojson_data.features.forEach(pointik => {
-    // L.polyline([pointik.geometry.coordinates[1], pointik.geometry.coordinates[0]]).bindPopup(pointik.properties.name).addTo(bridgeFeatureGroup);
-    // });
+    let marker_end = L.marker(endPoint).addTo(map).bindPopup("Ending point").openPopup();
+    marker_end._icon.classList.add("huechange");
+    route_markers.addLayer(marker_end);
+  }
 
 
+  function showButton() {
+    document.getElementById('deleteButton').style.display = 'block';
+  }
 
-    // Reset points for next route calculation
+  document.getElementById('deleteButton').addEventListener('click', function() {
+    route_markers.clearLayers();
     startPoint = null;
     endPoint = null;
-  }
+    this.style.display = 'none';
+  });
+
+  showButton();
+  
+
+  showButton();
+
+  // Calculate route
+  let route = calculateRoute(startPoint, endPoint);
+
+  // Plot shortest path
+  L.geoJSON(route, {
+    style: function (feature) {
+        return {
+            color: 'blue', 
+            weight: 3      
+        };
+    }
+  }).addTo(map);
 }
+
+
+
 
 
 // Functions using AJAX to send data to Django view
 
 function calculateRoute(startPoint, endPoint) {
-  var data = {
-    start_lat: startPoint.lat,
-    start_lng: startPoint.lng,
-    end_lat: endPoint.lat,
-    end_lng: endPoint.lng
+  let data = {
+    'start_lat': startPoint.lat,
+    'start_lng': startPoint.lng,
+    'end_lat': endPoint.lat,
+    'end_lng': endPoint.lng
   };
 
-  // Make AJAX request to Django view
   $.ajax({
-    url: '/route_view',
-    method: 'POST',
-    data: data,
+    url: '/directions/',
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify(data),
     success: function(response) {
-      // Handle successful response from Django
-      console.log(response);
+        console.log(response);
     },
-    error: function(xhr, status, error) {
-      // Handle error
-      console.error(xhr.responseText);
+    error: function(xhr, errmsg, err) {
+        console.log(xhr.status + ": " + xhr.responseText); // Log any errors
     }
   });
 }
 
-function makeid(length) {
-  var data = {
-    start_lat: startPoint.lat,
-    start_lng: startPoint.lng,
-    end_lat: endPoint.lat,
-    end_lng: endPoint.lng
-  };
-  $.ajax({
-      type: "GET",
-      url: '/route_view',
-      data: data,
-      dataType: "json",
-      success: function (data) {
-          alert("successfull")
-      },
-      failure: function () {
-          alert("failure");
-      }
-  });
-}
 
 
 map.on('click', onMapClick);

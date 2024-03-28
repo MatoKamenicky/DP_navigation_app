@@ -130,3 +130,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATICFILES_DIRS = ["C:/GAK/_ING_studium/ING_3_sem/DP_navigation_app/navigation_web_app/shortest_path_app/static"]
+
+CSRF_COOKIE_SECURE = True
+
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000/']

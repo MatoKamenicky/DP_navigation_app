@@ -7,6 +7,7 @@ from shapely.wkt import loads
 from folium import plugins
 import geojson
 from django.http import JsonResponse
+import json
 
 
 
@@ -107,14 +108,28 @@ def view_obstacles(request):
 
 def route_view(request):
     
-    data = request.GET.get('data')
+    if request.method == 'POST':
+        
+        start_lat = float(request.POST.get('number1'))
+        start_lng = float(request.POST.get('number2'))
+        end_lat = float(request.POST.get('number3'))
+        end_lng = float(request.POST.get('number4'))
 
-    start_point = (48.16703839996931, 17.078660578675134)
-    end_point = (48.15520311675808, 17.137080529772206)
-    route = spo.shortest_path(start_point, end_point)
+        start_point = (start_lat, start_lng)
+        end_point = (end_lat, end_lng)
 
+        route = spo.shortest_path(start_point, end_point)
 
-    return JsonResponse(route)
+        route_json = {
+        "type": "Feature",
+        "geometry": {
+            "type": "LineString",
+            "coordinates": route
+        }
+        }
+
+        return JsonResponse(route_json)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 def custom_404(request, exception):

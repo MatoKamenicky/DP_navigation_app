@@ -294,8 +294,8 @@ def shortest_path(start,end):
     plt.show()
     """
     
-    route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
-    return route_map
+    # route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
+    return shortest_path
 
 """
 Xo = 48.14225666993606, 17.119759122997106
