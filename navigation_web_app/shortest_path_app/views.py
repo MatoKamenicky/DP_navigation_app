@@ -109,35 +109,30 @@ def view_obstacles(request):
 def route_view(request):
     
     if request.method == 'POST':
+        body = json.loads(request.body)
         
-        start_lat = float(request.POST.get('start_lat'))
-        start_lng = float(request.POST.get('start_lon'))
-        end_lat = float(request.POST.get('end_lat'))
-        end_lng = float(request.POST.get('end_lon'))
+        start_lat = body['start_lat']
+        start_lng = body['start_lon']
+        end_lat = body['end_lat']
+        end_lng = body['end_lon']
 
         start_point = (start_lat, start_lng)
         end_point = (end_lat, end_lng)
 
         route = spo.shortest_path(start_point, end_point)
 
-        route_json = {
-        "type": "Feature",
-        "geometry": {
-            "type": "LineString",
-            "coordinates": route
-        }
-        }
+        # route_json = {
+        # "type": "Feature",
+        # "geometry": {
+        #     "type": "LineString",
+        #     "coordinates": route
+        # }
+        # }
+        print(route)
 
-        return JsonResponse(route_json)
+        return JsonResponse(route,safe=False)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 def custom_404(request, exception):
     return render(request, 'C:\GAK\_ING_studium\ING_3_sem\DP_navigation_app\navigation_web_app\shortest_path_app\templates\404.html', status=404)
-
-
-
-
-
-
-

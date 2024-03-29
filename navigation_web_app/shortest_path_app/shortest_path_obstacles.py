@@ -9,7 +9,7 @@ from shapely import wkb
 import geopandas as gpd
 import momepy as mm
 from shapely.geometry import LineString
-
+import json
 ox.config(use_cache=True, log_console=True)
 
 
@@ -288,6 +288,12 @@ def shortest_path(start,end):
     #Shortest path calculation
     shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
 
+
+    nodes_coords = [(graph_obstacles.nodes[node]['y'], graph_obstacles.nodes[node]['x']) for node in shortest_path]
+
+    shortest_path_line = LineString(nodes_coords)
+
+    geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
     """
     #Plot shortest path
     fig, ax = ox.plot_graph_route(graph_obstacles, shortest_path, route_color='r', route_linewidth=4, node_size=0)
@@ -295,7 +301,7 @@ def shortest_path(start,end):
     """
     
     # route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
-    return shortest_path
+    return geojson_geometry
 
 """
 Xo = 48.14225666993606, 17.119759122997106

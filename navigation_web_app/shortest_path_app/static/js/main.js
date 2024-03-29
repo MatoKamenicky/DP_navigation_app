@@ -192,7 +192,14 @@ function calculateRoute(startPoint, endPoint) {
     mode: 'same-origin',
     data: JSON.stringify(data),
     success: function(response) {
-        console.log(response);
+      var geojsonFeature = JSON.parse(response);
+      var myStyle = {
+        "color": "#ff7800",
+        "weight": 5,
+        "opacity": 0.65
+    };
+      var geojsonLayer = L.geoJSON(geojsonFeature, {style:myStyle}).addTo(map);
+      // map.fitBounds(geojsonLayer.getBounds());
     },
     error: function(xhr, errmsg, err) {
         console.log(xhr.status + ": " + xhr.responseText); 
