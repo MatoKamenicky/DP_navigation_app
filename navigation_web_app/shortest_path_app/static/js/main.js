@@ -1,5 +1,5 @@
 // Map + zoom +location
-var map = L.map('map',{zoomControl: false}).setView([48.14, 17.12], 10);
+var map = L.map('map',{zoomControl: false}).setView([48.14, 17.12], 12);
 L.control.zoom({position: 'bottomright'}).addTo(map);
 L.control.locate({position:'topright'}).addTo(map);
 
@@ -108,6 +108,8 @@ var redIcon = L.icon({
 
 function onMapClick(e) {
   let route_markers = L.featureGroup().addTo(map);
+  // let route_group = L.LayerGroup().addTo(map);
+
 
   if (startPoint === null) {
     let button = L.DomUtil.create('button', 'popup-button');
@@ -138,51 +140,36 @@ function onMapClick(e) {
     route_markers.addLayer(marker_end);
   }
 
+  // Calculate route
+  startPoint_route = [startPoint.lng, startPoint.lat];
+  endPoint_route = [endPoint.lng, endPoint.lat];
+  let route = calculateRoute(startPoint, endPoint);
 
+  // Show delete button
   function showButton() {
     document.getElementById('deleteButton').style.display = 'block';
   }
 
   document.getElementById('deleteButton').addEventListener('click', function() {
     route_markers.clearLayers();
+    route_group.clearLayers();
     startPoint = null;
     endPoint = null;
     this.style.display = 'none';
   });
 
   showButton();
-  
-  // Calculate route
-  startPoint_route = [startPoint.lng, startPoint.lat];
-  endPoint_route = [endPoint.lng, endPoint.lat];
-  let route = calculateRoute(startPoint, endPoint);
 
-  // Plot shortest path
-  L.geoJSON(route, {
-    style: function (feature) {
-        return {
-            color: 'blue', 
-            weight: 3      
-        };
-    }
-  }).addTo(map);
 }
 
 // Functions using AJAX to send data to Django view
 function calculateRoute(startPoint, endPoint) {
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  // let data = {
-  //   'start_lat': startPoint.lat,
-  //   'start_lon': startPoint.lng,
-  //   'end_lat': endPoint.lat,
-  //   'end_lon': endPoint.lng
-  // };
-
   let data = {
-    'start_lat': 48.13981270510992,
-    'start_lon': 17.108043371743726,
-    'end_lat': 48.146124356029965, 
-    'end_lon': 17.127030258137136
+    'start_lat': startPoint.lat,
+    'start_lon': startPoint.lng,
+    'end_lat': endPoint.lat,
+    'end_lon': endPoint.lng
   };
 
   $.ajax({
@@ -198,11 +185,11 @@ function calculateRoute(startPoint, endPoint) {
         "weight": 5,
         "opacity": 0.65
     };
-      var geojsonLayer = L.geoJSON(geojsonFeature, {style:myStyle}).addTo(map);
-      // map.fitBounds(geojsonLayer.getBounds());
+      var route = L.geoJSON(geojsonFeature).addTo(map);
+      route_group.addLayer(route);
     },
     error: function(xhr, errmsg, err) {
-        console.log(xhr.status + ": " + xhr.responseText); 
+      console.log(xhr.status + ": " + xhr.responseText); 
     }
   });
 }

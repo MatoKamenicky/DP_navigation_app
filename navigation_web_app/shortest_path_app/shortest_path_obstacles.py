@@ -8,9 +8,10 @@ from shapely.wkt import loads
 from shapely import wkb
 import geopandas as gpd
 import momepy as mm
-from shapely.geometry import LineString
+from shapely import geometry, ops
 import json
-ox.config(use_cache=True, log_console=True)
+import taxicab as tc
+import pandas as pd
 
 
 
@@ -36,6 +37,13 @@ def get_obstacles(type,conn,everything=False):
 
         return obstacles 
 
+
+
+
+
+
+
+
 #New way to save road network to DB - using geodataframe
 def road_network_to_db_gdf(place_name,table):
     graph  = ox.graph_from_place(place_name, network_type="drive", simplify=True)
@@ -50,25 +58,67 @@ def road_network_to_db_gdf(place_name,table):
 
 #road_network_to_db_gdf("Bratislava, Slovakia","road_network_BA_gdf")
 
-#function to import road network from postgres to python using geodataframe
-def graph_from_db_gdf(table):
+#-------------------------------------------------------------------------#
+
+def to_db(place_name):
+    graph  = ox.graph_from_place(place_name, network_type="drive", simplify=False, truncate_by_edge=True)
+    graph = ox.speed.add_edge_speeds(graph)
+    graph = ox.speed.add_edge_travel_times(graph)
+    
     engine = create_engine("postgresql://postgres:postgres@localhost:5432/DP_nav") 
 
-    nodes_table = table + "_nodes"
-    edges_table = table + "_edges"
-    sql_nodes = f"""SELECT node_id, lon, lat, ST_AsBinary(geometry)
-                    FROM {nodes_table}"""
-    
-    sql_edges = f"""SELECT node_start, node_end, ST_AsBinary(geometry)
-                    FROM {edges_table}"""
-    
-    #nodes_gdf = gpd.GeoDataFrame.from_postgis(sql_nodes, engine, geom_col='geometry')
-    edges_gdf = gpd.GeoDataFrame.from_postgis(sql_edges, engine, geom_col='geometry')
+    gdf_nodes, gdf_edges = ox.graph_to_gdfs(
+        graph,
+        nodes=True, edges=True,
+        node_geometry=True,
+        fill_edge_geometry=True)
+    gdf_nodes.set_geometry("geometry")
+    gdf_edges.set_geometry("geometry")
 
-    graph = mm.gdf_to_nx(edges_gdf, approach='primal')
-
-    return graph
+    # print(gdf_nodes.head())
+    # print(gdf_edges.head())
+    # graph = ox.graph_from_gdfs(gdf_nodes, gdf_edges)
+    # return(graph)
     
+    gdf_nodes.to_postgis("ba_nodes", engine, if_exists='replace', index=True, index_label='id', schema='public')
+    gdf_nodes.to_postgis("ba_edges", engine, if_exists='replace', index=True, index_label='id', schema='public')
+
+    # gdf_edges.to_sql("ba_edges", engine, if_exists='replace', schema='public')
+
+to_db("Bratislava, Slovakia")
+
+def from_db():
+
+    engine = create_engine("postgresql://postgres:postgres@localhost:5432/DP_nav") 
+
+    # edges = pd.read_sql("ba_edges",engine)
+    # gdf_edges = gpd.GeoDataFrame(edges, crs="EPSG:4326", geometry='geometry')
+
+    nodes = gpd.read_postgis("SELECT * FROM ba_nodes;",engine,geom_col='geometry')
+    edges = gpd.read_postgis("SELECT * FROM ba_edges;",engine,geom_col='geometry')
+
+    graph = ox.graph_from_gdfs(nodes, edges)
+    # print(gdf_edges.head())
+    return graph 
+
+# from_db()
+
+def plot_graph():
+    graph = from_db()
+    fig,ax = ox.plot_graph(graph)
+    plt.show()
+
+plot_graph()
+
+
+
+
+#-------------------------------------------------------------------------#
+
+
+
+
+#---------------------------------OLD WAY---------------------------------#
 #function to import road network from postgres to python using as text for geometry
 def graph_from_db_new(table, conn):
     cur = conn.cursor()
@@ -108,59 +158,6 @@ def graph_from_db_new(table, conn):
 
     return graph
 
-
-#---------------------------------OLD WAY---------------------------------#
-    
-#function to save road network to DB using postgis and geometry data type
-def road_network_to_db(place_name,table):
-    graph  = ox.graph_from_place(place_name, network_type="drive", simplify=True)
-    
-    #save to DB
-    conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
-    cur = conn.cursor()
-
-    edges_table = table + "_edges" 
-    cur.execute(f"""
-        CREATE TABLE IF NOT EXISTS {edges_table} (
-            id SERIAL PRIMARY KEY,
-            source BIGINT ,
-            target BIGINT ,
-            geometry GEOMETRY(LineString, 4326)
-        )
-    """)
-
-    nodes_table = table + "_nodes" 
-    cur.execute(f"""
-        CREATE TABLE IF NOT EXISTS {nodes_table} (
-            id SERIAL PRIMARY KEY,
-            node_id BIGINT,
-            lon DOUBLE PRECISION,
-            lat DOUBLE PRECISION,
-            geometry GEOMETRY(Point, 4326)
-        )
-    """)
-
-    # Insert edges into the database
-    for u, v, data in graph.edges(data=True):
-        if 'geometry' in data:
-            geometry = data['geometry']
-            cur.execute(sql.SQL("""
-                INSERT INTO road_network_BA_edges (source, target, geometry)
-                VALUES (%s, %s, ST_SetSRID(ST_GeomFromText(%s), 4326))
-            """), (u, v, geometry.wkt))
-
-    # Insert nodes into the database
-    for node, data in graph.nodes(data=True):
-        cur.execute(sql.SQL("""
-            INSERT INTO road_network_BA_nodes (node_id, lon, lat, geometry)
-            VALUES (%s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
-        """), (node, data['x'], data['y'], data['x'], data['y']))
-
-
-
-    conn.commit()
-    cur.close()
-    conn.close()
 
 def graph_from_db(table, conn, include_nodes=False):
     cur = conn.cursor()
@@ -256,7 +253,8 @@ def shortest_path(start,end):
     bridge_obstacles = get_obstacles('bridge_obstacles',conn,)
     obstacles_edge = []
 
-    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True)
+    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True)
+
 
     
    
@@ -266,6 +264,10 @@ def shortest_path(start,end):
             obstacles_edge.append(edge_record)
     
     graph_obstacles.remove_edges_from(obstacles_edge) 
+
+    # graph_obstacles = ox.speed.add_edge_speed(graph_obstacles)
+    # graph_obstacles = ox.speed.add_edge_travel_times(graph_obstacles)
+
     
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
@@ -280,18 +282,20 @@ def shortest_path(start,end):
     """
     
     #nearest node to the points of origin and destination
-    node_Xo = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
-    node_Xd = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
+    # orig = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
+    # dest = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
     
-    nodes = [node_Xo, node_Xd]
+    # nodes = [orig, dest]
 
     #Shortest path calculation
-    shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
+    #shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
 
+    route = tc.distance.shortest_path(graph_obstacles, start, end)
 
-    nodes_coords = [(graph_obstacles.nodes[node]['y'], graph_obstacles.nodes[node]['x']) for node in shortest_path]
+    nodes_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in route[1]]
 
-    shortest_path_line = LineString(nodes_coords)
+    multi_line = geometry.MultiLineString([geometry.LineString(nodes_coords), route[2], route[3]])
+    shortest_path_line = ops.linemerge(multi_line)
 
     geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
     """
@@ -303,11 +307,6 @@ def shortest_path(start,end):
     # route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
     return geojson_geometry
 
-"""
-Xo = 48.14225666993606, 17.119759122997106
-Xd = 48.147988762031815, 17.144489719694707
 
-shortest_path(Xo,Xd)
-"""
 
 
