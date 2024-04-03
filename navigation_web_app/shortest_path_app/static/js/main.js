@@ -1,5 +1,5 @@
 // Map + zoom +location
-var map = L.map('map',{zoomControl: false}).setView([48.14, 17.12], 12);
+var map = L.map('map',{zoomControl: false}).setView([48.14, 17.12], 13);
 L.control.zoom({position: 'bottomright'}).addTo(map);
 L.control.locate({position:'topright'}).addTo(map);
 
@@ -106,11 +106,10 @@ var redIcon = L.icon({
   iconUrl: 'leaf-green.png',
 });
 
+let routeLayer;
+let route_markers = L.featureGroup().addTo(map);
+
 function onMapClick(e) {
-  let route_markers = L.featureGroup().addTo(map);
-  // let route_group = L.LayerGroup().addTo(map);
-
-
   if (startPoint === null) {
     let button = L.DomUtil.create('button', 'popup-button');
     button.innerHTML = 'Direction from here';
@@ -129,41 +128,23 @@ function onMapClick(e) {
         .addTo(map)
         .bindPopup("Start point")
         .openPopup();
-      route_markers.addLayer(marker_start);
+      marker_start.addTo(route_markers);
     });
     
     
   } else if (endPoint === null) {
     endPoint = e.latlng;
-    let marker_end = L.marker(endPoint).addTo(map).bindPopup("Ending point").openPopup();
-    marker_end._icon.classList.add("huechange");
-    route_markers.addLayer(marker_end);
+    let marker_end = L.marker(endPoint)
+      .addTo(map)
+      .bindPopup("Ending point")
+      .openPopup();
+    marker_end.addTo(route_markers);
   }
 
   // Calculate route
   startPoint_route = [startPoint.lng, startPoint.lat];
   endPoint_route = [endPoint.lng, endPoint.lat];
-  let route = calculateRoute(startPoint, endPoint);
 
-  // Show delete button
-  function showButton() {
-    document.getElementById('deleteButton').style.display = 'block';
-  }
-
-  document.getElementById('deleteButton').addEventListener('click', function() {
-    route_markers.clearLayers();
-    route_group.clearLayers();
-    startPoint = null;
-    endPoint = null;
-    this.style.display = 'none';
-  });
-
-  showButton();
-
-}
-
-// Functions using AJAX to send data to Django view
-function calculateRoute(startPoint, endPoint) {
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
   let data = {
     'start_lat': startPoint.lat,
@@ -184,15 +165,72 @@ function calculateRoute(startPoint, endPoint) {
         "color": "#ff7800",
         "weight": 5,
         "opacity": 0.65
-    };
-      var route = L.geoJSON(geojsonFeature).addTo(map);
-      route_group.addLayer(route);
+      };
+      if (routeLayer) {
+        map.removeLayer(routeLayer);
+      }
+      routeLayer = L.geoJSON(geojsonFeature, {
+        style: myStyle
+      }).addTo(map);
     },
     error: function(xhr, errmsg, err) {
       console.log(xhr.status + ": " + xhr.responseText); 
     }
   });
+  // let route = calculateRoute(startPoint, endPoint);
+  
+  // Show delete button
+  function showButton() {
+    document.getElementById('deleteButton').style.display = 'block';
+  }
+
+  document.getElementById('deleteButton').addEventListener('click', function() {
+    route_markers.clearLayers();
+    if (routeLayer) {
+      map.removeLayer(routeLayer);
+      routeLayer = null;
+    }
+    startPoint = null;
+    endPoint = null;
+    this.style.display = 'none';
+  });
+
+  showButton();
+
 }
+
+// Functions using AJAX to send data to Django view
+// function calculateRoute(startPoint, endPoint) {
+  // const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  // let data = {
+  //   'start_lat': startPoint.lat,
+  //   'start_lon': startPoint.lng,
+  //   'end_lat': endPoint.lat,
+  //   'end_lon': endPoint.lng
+  // };
+
+  // $.ajax({
+  //   url: '/directions/',
+  //   type: 'POST',
+  //   headers: {'X-CSRFToken': csrftoken},
+  //   mode: 'same-origin',
+  //   data: JSON.stringify(data),
+  //   success: function(response) {
+  //     var geojsonFeature = JSON.parse(response);
+  //     var myStyle = {
+  //       "color": "#ff7800",
+  //       "weight": 5,
+  //       "opacity": 0.65
+  //   };
+  //     let route = L.geoJSON(geojsonFeature).addTo(map);
+  //     return route;
+  //   },
+  //   error: function(xhr, errmsg, err) {
+  //     console.log(xhr.status + ": " + xhr.responseText); 
+  //   }
+  // });
+  
+// }
 
 
 

@@ -85,7 +85,7 @@ def to_db(place_name):
 
     # gdf_edges.to_sql("ba_edges", engine, if_exists='replace', schema='public')
 
-to_db("Bratislava, Slovakia")
+# to_db("Bratislava, Slovakia")
 
 def from_db():
 
@@ -94,8 +94,8 @@ def from_db():
     # edges = pd.read_sql("ba_edges",engine)
     # gdf_edges = gpd.GeoDataFrame(edges, crs="EPSG:4326", geometry='geometry')
 
-    nodes = gpd.read_postgis("SELECT * FROM ba_nodes;",engine,geom_col='geometry')
-    edges = gpd.read_postgis("SELECT * FROM ba_edges;",engine,geom_col='geometry')
+    nodes = gpd.read_postgis("SELECT * FROM ba_nodes;", engine, geom_col='geometry')
+    edges = gpd.read_postgis("SELECT * FROM ba_edges;", engine, geom_col='geometry')
 
     graph = ox.graph_from_gdfs(nodes, edges)
     # print(gdf_edges.head())
@@ -108,7 +108,7 @@ def plot_graph():
     fig,ax = ox.plot_graph(graph)
     plt.show()
 
-plot_graph()
+# plot_graph()
 
 
 
