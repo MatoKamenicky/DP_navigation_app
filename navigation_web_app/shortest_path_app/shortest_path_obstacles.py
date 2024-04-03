@@ -75,15 +75,10 @@ def to_db(place_name):
     gdf_nodes.set_geometry("geometry")
     gdf_edges.set_geometry("geometry")
 
-    # print(gdf_nodes.head())
-    # print(gdf_edges.head())
-    # graph = ox.graph_from_gdfs(gdf_nodes, gdf_edges)
-    # return(graph)
-    
-    gdf_nodes.to_postgis("ba_nodes", engine, if_exists='replace', index=True, index_label='id', schema='public')
-    gdf_nodes.to_postgis("ba_edges", engine, if_exists='replace', index=True, index_label='id', schema='public')
+    gdf_edges = gdf_edges.reset_index() 
 
-    # gdf_edges.to_sql("ba_edges", engine, if_exists='replace', schema='public')
+    gdf_nodes.to_postgis("ba_nodes", engine, if_exists='replace', index=True, index_label='osmid', schema='public')
+    gdf_edges.to_postgis("ba_edges", engine, if_exists='replace', schema='public')
 
 # to_db("Bratislava, Slovakia")
 
@@ -91,17 +86,14 @@ def from_db():
 
     engine = create_engine("postgresql://postgres:postgres@localhost:5432/DP_nav") 
 
-    # edges = pd.read_sql("ba_edges",engine)
-    # gdf_edges = gpd.GeoDataFrame(edges, crs="EPSG:4326", geometry='geometry')
-
     nodes = gpd.read_postgis("SELECT * FROM ba_nodes;", engine, geom_col='geometry')
     edges = gpd.read_postgis("SELECT * FROM ba_edges;", engine, geom_col='geometry')
 
-    graph = ox.graph_from_gdfs(nodes, edges)
-    # print(gdf_edges.head())
-    return graph 
+    # graph = ox.graph_from_gdfs(nodes, edges)
+    print(edges.head())
+    # return graph 
 
-# from_db()
+from_db()
 
 def plot_graph():
     graph = from_db()

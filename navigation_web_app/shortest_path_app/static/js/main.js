@@ -142,8 +142,34 @@ function onMapClick(e) {
   }
 
   // Calculate route
+  let route = calculateRoute(startPoint, endPoint);
+  
+  // Show delete button
+  function showButton() {
+    document.getElementById('deleteButton').style.display = 'block';
+  }
+
+  document.getElementById('deleteButton').addEventListener('click', function() {
+    route_markers.clearLayers();
+    if (routeLayer) {
+      map.removeLayer(routeLayer);
+      routeLayer = null;
+    }
+    startPoint = null;
+    endPoint = null;
+    this.style.display = 'none';
+  });
+
+  showButton();
+
+}
+
+// Functions using AJAX to send data to Django view
+function calculateRoute(startPoint, endPoint) {
   startPoint_route = [startPoint.lng, startPoint.lat];
   endPoint_route = [endPoint.lng, endPoint.lat];
+
+  $('#loading-icon').show();
 
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
   let data = {
@@ -174,63 +200,11 @@ function onMapClick(e) {
       }).addTo(map);
     },
     error: function(xhr, errmsg, err) {
+      $('#loading-icon').hide();
       console.log(xhr.status + ": " + xhr.responseText); 
     }
-  });
-  // let route = calculateRoute(startPoint, endPoint);
-  
-  // Show delete button
-  function showButton() {
-    document.getElementById('deleteButton').style.display = 'block';
-  }
-
-  document.getElementById('deleteButton').addEventListener('click', function() {
-    route_markers.clearLayers();
-    if (routeLayer) {
-      map.removeLayer(routeLayer);
-      routeLayer = null;
-    }
-    startPoint = null;
-    endPoint = null;
-    this.style.display = 'none';
-  });
-
-  showButton();
-
+  }); 
 }
-
-// Functions using AJAX to send data to Django view
-// function calculateRoute(startPoint, endPoint) {
-  // const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  // let data = {
-  //   'start_lat': startPoint.lat,
-  //   'start_lon': startPoint.lng,
-  //   'end_lat': endPoint.lat,
-  //   'end_lon': endPoint.lng
-  // };
-
-  // $.ajax({
-  //   url: '/directions/',
-  //   type: 'POST',
-  //   headers: {'X-CSRFToken': csrftoken},
-  //   mode: 'same-origin',
-  //   data: JSON.stringify(data),
-  //   success: function(response) {
-  //     var geojsonFeature = JSON.parse(response);
-  //     var myStyle = {
-  //       "color": "#ff7800",
-  //       "weight": 5,
-  //       "opacity": 0.65
-  //   };
-  //     let route = L.geoJSON(geojsonFeature).addTo(map);
-  //     return route;
-  //   },
-  //   error: function(xhr, errmsg, err) {
-  //     console.log(xhr.status + ": " + xhr.responseText); 
-  //   }
-  // });
-  
-// }
 
 
 
