@@ -108,6 +108,23 @@ var redIcon = L.icon({
 
 let routeLayer;
 let route_markers = L.featureGroup().addTo(map);
+var greenIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+var redIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 function onMapClick(e) {
   if (startPoint === null) {
@@ -124,26 +141,13 @@ function onMapClick(e) {
 
     button.addEventListener('click', function() {
       route_markers.clearLayers();
-      marker_start = L.marker(startPoint)
+      marker_start = L.marker(startPoint,{icon: greenIcon})
         .addTo(map)
         .bindPopup("Start point")
         .openPopup();
       marker_start.addTo(route_markers);
     });
-    
-    
-  } else if (endPoint === null) {
-    endPoint = e.latlng;
-    let marker_end = L.marker(endPoint)
-      .addTo(map)
-      .bindPopup("Ending point")
-      .openPopup();
-    marker_end.addTo(route_markers);
-  }
 
-  // Calculate route
-  let route = calculateRoute(startPoint, endPoint);
-  
   // Show delete button
   function showButton() {
     document.getElementById('deleteButton').style.display = 'block';
@@ -161,7 +165,19 @@ function onMapClick(e) {
   });
 
   showButton();
+    
+    
+  } else if (endPoint === null) {
+    endPoint = e.latlng;
+    let marker_end = L.marker(endPoint,{icon: redIcon})
+      .addTo(map)
+      .bindPopup("Ending point")
+      .openPopup();
+    marker_end.addTo(route_markers);
+  }
 
+  // Calculate route
+  let route = calculateRoute(startPoint, endPoint);
 }
 
 // Functions using AJAX to send data to Django view
@@ -170,7 +186,6 @@ function calculateRoute(startPoint, endPoint) {
   endPoint_route = [endPoint.lng, endPoint.lat];
 
   $('#loading-icon').show();
-
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
   let data = {
     'start_lat': startPoint.lat,
@@ -200,10 +215,10 @@ function calculateRoute(startPoint, endPoint) {
       }).addTo(map);
     },
     error: function(xhr, errmsg, err) {
-      $('#loading-icon').hide();
       console.log(xhr.status + ": " + xhr.responseText); 
     }
   }); 
+  $('#loading-icon').hide();
 }
 
 

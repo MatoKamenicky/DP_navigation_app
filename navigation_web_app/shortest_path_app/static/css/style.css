@@ -12,6 +12,38 @@ body {
     position: absolute;
     z-index: 1000;
 }
+.offcanvas-body {
+  padding: 20px;
+}
+
+.offcanvas-body p {
+  margin: 0;
+  padding: 10px 0;
+}
+
+.offcanvas-body a {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  padding: 5px;
+  transition: background-color 0.3s;
+}
+
+.offcanvas-body a:hover {
+  background-color: #f0f0f0; /* Change background color on hover */
+}
+
+.offcanvas-body a i {
+  margin-right: 10px; /* Adjust spacing between icon and text */
+}
+
+.offcanvas-body a span {
+  color: #333; /* Default color for text */
+}
+
+.offcanvas-body a:hover span {
+  color: #007bff; /* Change text color on hover */
+}
 #loading-icon {
   position: fixed;
   top: 50%;

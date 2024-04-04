@@ -89,11 +89,15 @@ def from_db():
     nodes = gpd.read_postgis("SELECT * FROM ba_nodes;", engine, geom_col='geometry')
     edges = gpd.read_postgis("SELECT * FROM ba_edges;", engine, geom_col='geometry')
 
-    # graph = ox.graph_from_gdfs(nodes, edges)
-    print(edges.head())
-    # return graph 
+    nodes["x"] = nodes["geometry"].x
+    nodes["y"] = nodes["geometry"].y
 
-from_db()
+    graph = ox.graph_from_gdfs(nodes, edges)
+    # graph = mm.gdf_to_nx(edges)
+    # print(nodes.head())
+    return graph 
+
+# from_db()
 
 def plot_graph():
     graph = from_db()
