@@ -221,6 +221,16 @@ function calculateRoute(startPoint, endPoint) {
   $('#loading-icon').hide();
 }
 
+// Info popup about car category
+var infoPopup = L.divOverlay({
+  className: 'info_popup',
+  html: document.getElementById('infoPopup').innerHTML
+}).addTo(map);
+
+map.on('move', function () {
+  infoPopup.setLatLng(map.getCenter());
+});
+
 
 
 map.on('click', onMapClick);

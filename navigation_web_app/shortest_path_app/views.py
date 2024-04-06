@@ -1,22 +1,12 @@
 from django.shortcuts import render
 import folium
 from . import shortest_path_obstacles as spo
-from .forms import CoordinatesForm 
-from .models import Coordinates
+from .forms import CarDimensionsForm 
 from shapely.wkt import loads
 from folium import plugins
 import geojson
 from django.http import JsonResponse
 import json
-
-
-
-
-def map_view(request):
-    m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=10)
-    folium.Marker(location=[48.14225666993606, 17.119759122997106], popup='Bratislava').add_to(m)
-    m = m._repr_html_()
-    return render(request,'map.html', {'map': m})
 
 
 
@@ -41,16 +31,17 @@ def coor_form(request):
         form = CoordinatesForm()
     return render(request, 'coor_form.html', {'form': form, 'shortest_path': shortest_path})
 """
+def car_dimensions(request):
+    if request.method == 'POST':
+        form = CarDimensionsForm(request.POST)
+        if form.is_valid():
+            height = form.cleaned_data['height']
+            width = form.cleaned_data['width']
+            weight = form.cleaned_data['weight']
+    else:
+        form = CarDimensionsForm()
+    return render(request, 'home.html', {'form': form})
 
-"""
-#raster layers
-folium.TileLayer('Open Street Map').add_to(m)
-folium.TileLayer('Stamen Terrain').add_to(m)
-folium.TileLayer('Stamen Toner').add_to(m)
-folium.TileLayer('Stamen Watercolor').add_to(m)
-folium.TileLayer('CartoDB Positron').add_to(m)
-folium.TileLayer('CartoDB Dark_Matter').add_to(m)
-"""
 
 def home(request):
     conn = spo.connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
@@ -121,13 +112,6 @@ def route_view(request):
 
         route = spo.shortest_path(start_point, end_point)
 
-        # route_json = {
-        # "type": "Feature",
-        # "geometry": {
-        #     "type": "LineString",
-        #     "coordinates": route
-        # }
-        # }
         print(route)
 
         return JsonResponse(route,safe=False)
