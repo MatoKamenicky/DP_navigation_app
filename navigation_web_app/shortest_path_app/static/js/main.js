@@ -224,11 +224,19 @@ function calculateRoute(startPoint, endPoint) {
 // Info popup about car category
 var infoPopup = L.divOverlay({
   className: 'info_popup',
-  html: document.getElementById('infoPopup').innerHTML
+  html: document.getElementById('carInfoPopup').innerHTML
 }).addTo(map);
 
 map.on('move', function () {
   infoPopup.setLatLng(map.getCenter());
+});
+
+var form = document.getElementById('carDimensionsForm');
+form.addEventListener('submit', function(event) {
+  event.preventDefault();
+
+  var weightValue = parseFloat(document.getElementById('id_weight').value);
+  document.getElementById("weightValue").innerText = weightValue + " kg";
 });
 
 

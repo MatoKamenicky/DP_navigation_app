@@ -11,7 +11,8 @@ import momepy as mm
 from shapely import geometry, ops
 import json
 import taxicab as tc
-import pandas as pd
+import re
+
 
 
 
@@ -31,7 +32,8 @@ def get_obstacles(type,conn,everything=False):
     elif everything == False:
         conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
         cursor = conn.cursor()
-        cursor.execute(f"""SELECT index, ST_AsText(geom),nearest_edge_u,nearest_edge_v,nazov_objektu FROM {type}""")
+        cursor.execute(f"""SELECT index, ST_AsText(geom),nearest_edge_u,nearest_edge_v,nazov_objektu,predpisana_vypocitana_normalna
+        FROM {type}""")
         obstacles  = cursor.fetchall()
         cursor.close()
 
@@ -208,7 +210,7 @@ def obstacles_nearest_edge():
     bridge_obstacles = get_obstacles('bridge_obstacles',conn)
 
     for record in bridge_obstacles:
-        point_id, point_text, u, v,name = record
+        point_id, point_text, u, v,name,max_weight = record
         point_geometry = loads(point_text)
         if point_geometry is not None:
             lon, lat = point_geometry.x, point_geometry.y
@@ -236,10 +238,18 @@ def export_gpkg(graph, shortest_path):
     nodes_gdf.to_file('graph_data.gpkg', layer='nodes', driver='GPKG')
     shortest_path_nodes_gdf.to_file('shortest_path.gpkg', layer='shortest_path', driver='GPKG')
 
-
+#function for extracting the first number from the string - max weight of the bridge
+def extract_first_number(value):
+    pattern = r'\b\d+(\.\d+)?'
+    matches = re.findall(pattern, value)
+    # Return the first match, if any
+    if matches:
+        return float(matches[0])
+    else:
+        return None  # Return None if no match found
 
 #function to find the shortest path with obstacles, using graph from postgres DB - for now only plot the graph
-def shortest_path(start,end):
+def shortest_path(start,end,car_weight):
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
     #graph = graph_from_db_new("road_network_ba",conn)
     #graph_obstacles = graph_from_db_new("road_network_ba",conn)
@@ -252,9 +262,12 @@ def shortest_path(start,end):
     
    
     for record in bridge_obstacles:
-        edge_record = (record[2],record[3])
-        if edge_record[0] is not None and edge_record[1] is not None:
-            obstacles_edge.append(edge_record)
+        max_weight = extract_first_number(record[5])
+        if max_weight is not None:
+            if max_weight > car_weight:
+                edge_record = (record[2],record[3])
+                if edge_record[0] is not None and edge_record[1] is not None:
+                    obstacles_edge.append(edge_record)
     
     graph_obstacles.remove_edges_from(obstacles_edge) 
 
