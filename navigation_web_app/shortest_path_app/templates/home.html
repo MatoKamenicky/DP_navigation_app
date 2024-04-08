@@ -38,9 +38,10 @@
             <p><a href="{% url 'route_view' %}">Directions</a> </p>
             <form id="carDimensionsForm" method="post" novalidate>
                 {% csrf_token %}
-                {{ form }}
-                <button type="submit">Submit</button>
+                {{ form.weight }}
             </form>
+            <button id=submit_button type="button">Submit</button>
+            <button id="obstacles_button">View obstacles</button>
         </div>
     </div>
     <div id="container">
@@ -55,9 +56,7 @@
     <div id="loading-icon" style="display: none;">
         <img src="C:/GAK/_ING_studium/ING_3_sem/DP_navigation_app/navigation_web_app/shortest_path_app/templates/loading.gif" alt="Loading..." />
     </div>
-    <div id="carInfoPopup" class="info_popup">
-        <p>Weight: <span id="weightValue"></span> kg</p>
-    </div>
+    <div id="carInfoPopup" class="info_popup" style="display: none;"></div>
 
     {{ geojson_data|json_script:"geojson_points" }}
 

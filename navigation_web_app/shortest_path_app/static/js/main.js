@@ -177,13 +177,15 @@ function onMapClick(e) {
   }
 
   // Calculate route
-  let route = calculateRoute(startPoint, endPoint);
+  var car_weight = document.getElementById('id_weight').value;
+  let route = calculateRoute(startPoint, endPoint,car_weight);
 }
 
 // Functions using AJAX to send data to Django view
-function calculateRoute(startPoint, endPoint) {
+function calculateRoute(startPoint, endPoint,car_weight) {
   startPoint_route = [startPoint.lng, startPoint.lat];
   endPoint_route = [endPoint.lng, endPoint.lat];
+
 
   $('#loading-icon').show();
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -191,7 +193,8 @@ function calculateRoute(startPoint, endPoint) {
     'start_lat': startPoint.lat,
     'start_lon': startPoint.lng,
     'end_lat': endPoint.lat,
-    'end_lon': endPoint.lng
+    'end_lon': endPoint.lng,
+    'car_weight': car_weight
   };
 
   $.ajax({
@@ -221,24 +224,74 @@ function calculateRoute(startPoint, endPoint) {
   $('#loading-icon').hide();
 }
 
-// Info popup about car category
-var infoPopup = L.divOverlay({
-  className: 'info_popup',
-  html: document.getElementById('carInfoPopup').innerHTML
-}).addTo(map);
-
-map.on('move', function () {
-  infoPopup.setLatLng(map.getCenter());
-});
-
-var form = document.getElementById('carDimensionsForm');
-form.addEventListener('submit', function(event) {
-  event.preventDefault();
-
-  var weightValue = parseFloat(document.getElementById('id_weight').value);
-  document.getElementById("weightValue").innerText = weightValue + " kg";
-});
-
-
-
 map.on('click', onMapClick);
+
+// Info popup about car category
+
+
+// var infoPopup = L.divOverlay({
+//   className: 'info_popup',
+//   html: document.getElementById('carInfoPopup').innerHTML
+// }).addTo(map);
+
+// map.on('move', function () {
+//   infoPopup.setLatLng(map.getCenter());
+// });
+
+
+
+document.getElementById('submit_button').addEventListener('click', function() {
+  var car_weight = document.getElementById('id_weight').value;
+  document.getElementById('carInfoPopup').style.display = 'block';
+  var infoPopup = L.divOverlay({
+    className: 'info_popup',
+    html: document.getElementById('carInfoPopup').innerHTML = "Car weight: " + car_weight + " kg"
+  }).addTo(map);
+});
+
+let bridgeWeightGroup = L.featureGroup();
+document.getElementById('obstacles_button').addEventListener('click', function() {
+  var car_weight = document.getElementById('id_weight').value;
+  showObstacles(car_weight);
+});
+
+
+function showObstacles(car_weight) {
+  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  data ={'car_weight': car_weight}
+
+  $.ajax({
+    url: '/obstacles/',
+    type: 'POST',
+    headers: {'X-CSRFToken': csrftoken},
+    mode: 'same-origin',
+    data: JSON.stringify(data),
+    success: function(response) {
+      console.log("This is response: " + response);
+      // var geojsonFeature = JSON.parse(response);
+      // console.log(geojsonFeature);
+      // geojsonFeature.features.forEach(point => {
+      //   L.marker([point.geometry.coordinates[1], point.geometry.coordinates[0]]).bindPopup(point.properties.max_weight).addTo(bridgeWeightGroup);
+      //   bridgeWeightGroup.addTo(map);
+      //   });
+    },
+    error: function(xhr, errmsg, err) {
+      console.log(xhr.status + ": " + xhr.responseText); 
+    }
+  }); 
+}
+
+
+      
+// var form = document.getElementById('carDimensionsForm');
+// form.addEventListener('submit', function(event) {
+//   // event.preventDefault();
+//   var weightValue = parseFloat(document.getElementById('id_weight').value);
+//   document.getElementById("carInfoPopup").innerHTML = weightValue;
+// });
+
+
+
+
+
+

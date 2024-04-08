@@ -239,14 +239,60 @@ def export_gpkg(graph, shortest_path):
     shortest_path_nodes_gdf.to_file('shortest_path.gpkg', layer='shortest_path', driver='GPKG')
 
 #function for extracting the first number from the string - max weight of the bridge
-def extract_first_number(value):
-    pattern = r'\b\d+(\.\d+)?'
-    matches = re.findall(pattern, value)
-    # Return the first match, if any
-    if matches:
-        return float(matches[0])
+def extract_first_number(text):
+    pattern = r'\d+(\.\d+)?'
+    
+    match = re.search(pattern, text)
+    number = 0
+
+    if match and (float(match.group()) < 1000):
+        if match.group() is not None:
+            return float(match.group())
     else:
-        return None  # Return None if no match found
+        pass
+
+def plot_graph_obstacles(car_weight):
+    conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
+    bridge_obstacles = get_obstacles('bridge_obstacles',conn,)
+    obstacles_edge = []
+
+    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True)
+    graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True)
+
+   
+    for record in bridge_obstacles:
+        max_weight = extract_first_number(record[5])
+        if max_weight is not None:
+            if max_weight < car_weight:
+                edge_record = (record[2],record[3])
+                if edge_record[0] is not None and edge_record[1] is not None:
+                    obstacles_edge.append(edge_record)
+   
+
+    graph_obstacles.remove_edges_from(obstacles_edge) 
+
+    # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+    # ox.plot_graph(graph, ax=ax1, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
+    # ax1.set_title('Graph')
+
+    # ox.plot_graph(graph_obstacles, ax=ax2, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
+    # ax2.set_title('Graph obstacles')
+
+    # plt.show()
+    # for edge in obstacles_edge:
+    #     ec = ['r' if (edge[0]==4515988732 and edge[1]==2021402216) else 'gray' for u, v, k in G.edges(keys=True)]
+
+    # fig, ax = ox.plot_graph(G, node_color='w', node_edgecolor='k', node_size=30, 
+    #                        node_zorder=3, edge_color=ec, edge_linewidth=3)
+  
+
+    # nx.draw(graph_obstacles, with_labels=True, node_size=500, node_color='skyblue', font_size=12, font_weight='bold')
+    # nx.draw_networkx_edges(graph_obstacles, pos=nx.spring_layout(graph_obstacles), edgelist=obstacles_edge, edge_color='red', width=2)
+    # plt.show()
+
+# plot_graph_obstacles(50.0)
+
 
 #function to find the shortest path with obstacles, using graph from postgres DB - for now only plot the graph
 def shortest_path(start,end,car_weight):
@@ -264,11 +310,13 @@ def shortest_path(start,end,car_weight):
     for record in bridge_obstacles:
         max_weight = extract_first_number(record[5])
         if max_weight is not None:
-            if max_weight > car_weight:
+            if max_weight < car_weight:
                 edge_record = (record[2],record[3])
                 if edge_record[0] is not None and edge_record[1] is not None:
                     obstacles_edge.append(edge_record)
-    
+        
+    print(obstacles_edge)
+
     graph_obstacles.remove_edges_from(obstacles_edge) 
 
     # graph_obstacles = ox.speed.add_edge_speed(graph_obstacles)
@@ -312,6 +360,8 @@ def shortest_path(start,end,car_weight):
     
     # route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
     return geojson_geometry
+
+# shortest_path((48.1451, 17.1077),(48.1451, 17.1077), 50.0)
 
 
 
