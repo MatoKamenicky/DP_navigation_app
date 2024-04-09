@@ -206,9 +206,9 @@ function calculateRoute(startPoint, endPoint,car_weight) {
     success: function(response) {
       var geojsonFeature = JSON.parse(response);
       var myStyle = {
-        "color": "#ff7800",
-        "weight": 5,
-        "opacity": 0.65
+        "color": "#007bff",
+        "weight": 7,
+        "opacity": 0.75
       };
       if (routeLayer) {
         map.removeLayer(routeLayer);

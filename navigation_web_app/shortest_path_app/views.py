@@ -106,9 +106,6 @@ def obstacles_view(request):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 def route_view(request):
-    # car_weight = request.session.get('weight')
-    # if car_weight is None:
-    #     return JsonResponse({'error': 'Weight not found in session'}, status=400)
     if request.method == 'POST':
         body = json.loads(request.body)
         
@@ -121,9 +118,9 @@ def route_view(request):
         start_point = (start_lat, start_lng)
         end_point = (end_lat, end_lng)
 
-        # car_weight = request.POST.get('weight', 0)
-        print(car_weight)
-        route = spo.shortest_path(start_point, end_point, car_weight)
+        # route = spo.sp_obstacles(start_point, end_point)
+        route = spo.sp(start_point, end_point)
+
 
         print(route)
 

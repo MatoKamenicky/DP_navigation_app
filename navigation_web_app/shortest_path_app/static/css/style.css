@@ -103,3 +103,20 @@ body {
   border: none;
   z-index: 1000; 
 }
+.directions-button,
+.obstacles-button {
+    background-color: #007bff; /* Blue color */
+    color: #fff; /* White text */
+    border: none;
+    border-radius: 20px; /* Rounded corners */
+    padding: 10px 20px; /* Padding */
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s; /* Smooth color transition */
+    text-decoration: none; /* Remove underline */
+}
+
+.directions-button:hover,
+.obstacles-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}

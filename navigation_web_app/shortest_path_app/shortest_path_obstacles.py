@@ -13,7 +13,8 @@ import json
 import taxicab as tc
 import re
 
-
+ox.settings.use_cache = False
+ox.settings.log_console = False
 
 
 def connect_to_postgres(host, dbname, user, password):
@@ -253,7 +254,7 @@ def extract_first_number(text):
 
 def plot_graph_obstacles(car_weight):
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
-    bridge_obstacles = get_obstacles('bridge_obstacles',conn,)
+    bridge_obstacles = get_obstacles('bridge_obstacles',conn,everything=False)
     obstacles_edge = []
 
     graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True)
@@ -268,8 +269,11 @@ def plot_graph_obstacles(car_weight):
                 if edge_record[0] is not None and edge_record[1] is not None:
                     obstacles_edge.append(edge_record)
    
+    unique = set(obstacles_edge)
+    print(len(unique))
+    print(len(obstacles_edge))
 
-    graph_obstacles.remove_edges_from(obstacles_edge) 
+    # graph_obstacles.remove_edges_from(obstacles_edge) 
 
     # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
@@ -299,14 +303,17 @@ def shortest_path(start,end,car_weight):
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
     #graph = graph_from_db_new("road_network_ba",conn)
     #graph_obstacles = graph_from_db_new("road_network_ba",conn)
-    bridge_obstacles = get_obstacles('bridge_obstacles',conn,)
+    bridge_obstacles = get_obstacles('bridge_obstacles',conn)
     obstacles_edge = []
 
-    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True)
+    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
+    #graph_obstacles_d = ox.get_digraph(graph_obstacles)
+    graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
 
+    # graph_obstacles_proj = ox.project_graph(graph_obstacles)
+    # graph_obstacles = ox.consolidate_intersections(graph_obstacles_proj, rebuild_graph=True, tolerance=15, dead_ends=False)
 
-    
-   
+    # Remove edges with obstacles for specific car weight
     for record in bridge_obstacles:
         max_weight = extract_first_number(record[5])
         if max_weight is not None:
@@ -315,25 +322,33 @@ def shortest_path(start,end,car_weight):
                 if edge_record[0] is not None and edge_record[1] is not None:
                     obstacles_edge.append(edge_record)
         
-    print(obstacles_edge)
+   
 
     graph_obstacles.remove_edges_from(obstacles_edge) 
 
+    dif = nx.difference(graph, graph_obstacles)
+
+    ox.save_graph_geopackage(dif, filepath='graph_dif.gpkg', directed=True)
+
+    
+    # fig, ax = ox.plot_graph(dif)
+
+    # Add speeds and travel times to the graph
     # graph_obstacles = ox.speed.add_edge_speed(graph_obstacles)
     # graph_obstacles = ox.speed.add_edge_travel_times(graph_obstacles)
 
     
-    """
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+    
+    # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
-    ox.plot_graph(graph, ax=ax1, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
-    ax1.set_title('Graph')
+    # ox.plot_graph(graph, ax=ax1, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
+    # ax1.set_title('Graph')
 
-    ox.plot_graph(graph_obstacles, ax=ax2, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
-    ax2.set_title('Graph obstacles')
+    # ox.plot_graph(graph_obstacles, ax=ax2, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
+    # ax2.set_title('Graph obstacles')
 
-    plt.show()
-    """
+    # plt.show()
+   
     
     #nearest node to the points of origin and destination
     # orig = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
@@ -344,6 +359,47 @@ def shortest_path(start,end,car_weight):
     #Shortest path calculation
     #shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
 
+    # route = tc.distance.shortest_path(graph_obstacles, start, end)
+
+    # nodes_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in route[1]]
+
+    # multi_line = geometry.MultiLineString([geometry.LineString(nodes_coords), route[2], route[3]])
+    # shortest_path_line = ops.linemerge(multi_line)
+
+    # geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
+    
+    # # route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
+    # return geojson_geometry
+
+shortest_path((48.1451, 17.1077),(48.1451, 17.1077), 50.0)
+
+def sp_obstacles(start,end):
+    conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
+    bridge_obstacles = get_obstacles('bridge_obstacles',conn,everything=False)
+
+    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
+
+    bridge_coordinates = []
+    for record in bridge_obstacles:
+        point_id, point_text, u, v,name,max_weight = record
+        point_geometry = loads(point_text)
+        if point_geometry is not None:
+            (lon, lat) = point_geometry.x, point_geometry.y
+            bridge_coordinates.append((lat, lon))
+
+    bridge_nodes = []
+    for lat, lon in bridge_coordinates:
+        point = geometry.Point(lon, lat)
+        nearest_node = ox.distance.nearest_nodes(graph_obstacles, point.x, point.y)
+        bridge_nodes.append(nearest_node)
+
+    bridge_nodes_copy = bridge_nodes.copy()
+    for node in bridge_nodes_copy:
+        if node in graph_obstacles.nodes():
+            for neighbor in graph_obstacles.neighbors(node):
+                graph_obstacles.remove_edge(node, neighbor)
+
+
     route = tc.distance.shortest_path(graph_obstacles, start, end)
 
     nodes_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in route[1]]
@@ -352,17 +408,39 @@ def shortest_path(start,end,car_weight):
     shortest_path_line = ops.linemerge(multi_line)
 
     geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
-    """
-    #Plot shortest path
-    fig, ax = ox.plot_graph_route(graph_obstacles, shortest_path, route_color='r', route_linewidth=4, node_size=0)
-    plt.show()
-    """
     
-    # route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
     return geojson_geometry
 
-# shortest_path((48.1451, 17.1077),(48.1451, 17.1077), 50.0)
+# Function for calculae shortest path without obstacles - working fine
+def sp(start,end):
+    # conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
+    #graph = graph_from_db_new("road_network_ba",conn)
+
+    graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
+
+    # Version 1 - using OSMNX library - can use also travel time, not so accurate nearest node
+    # Add speeds and travel times to the graph
+    # graph_obstacles = ox.speed.add_edge_speed(graph_obstacles)
+    # graph_obstacles = ox.speed.add_edge_travel_times(graph_obstacles)
+ 
+    #nearest node to the points of origin and destination
+    # orig = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
+    # dest = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
+    
+    # nodes = [orig, dest]
+
+    #Shortest path calculation
+    #shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
 
 
+    # Version 2 - using taxicab library - cant use travel time, more accurate nearest node
+    route = tc.distance.shortest_path(graph, start, end)
 
+    nodes_coords = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in route[1]]
 
+    multi_line = geometry.MultiLineString([geometry.LineString(nodes_coords), route[2], route[3]])
+    shortest_path_line = ops.linemerge(multi_line)
+
+    geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
+    
+    return geojson_geometry
