@@ -76,33 +76,27 @@ def obstacles_view(request):
             point_geometry = loads(point_text)
             max_weight_bridge = spo.extract_first_number(max_weight)    
             if max_weight_bridge is not None:
-                if (point_geometry is not None) and (weight < max_weight_bridge):
+                if (point_geometry is not None) and (weight > max_weight_bridge):
                     lon, lat = point_geometry.x, point_geometry.y
-                    # feature = {
-                    # "type": "Feature",
-                    # "geometry": {
-                    #     "type": "Point",
-                    #     "coordinates": [lon, lat]
-                    # },
-                    # "properties": {
-                    #     "max_weight:": max_weight_bridge
-                    # }
-                    # }
                     feature = {
-                        "lon": lon,
-                        "lat": lat,
-                        "max_weight": max_weight_bridge
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [lon, lat]
+                        },
+                        "properties": {
+                            "max_weight:": max_weight_bridge
+                        }
                     }
                     features.append(feature)
 
-        # feature_collection = {
-        # "type": "FeatureCollection",
-        # "features": features
-        # }
-        # geojson_data = geojson.loads(geojson.dumps(feature_collection))
-        # print(features)
-        return JsonResponse(features,safe=False)
-        
+        feature_collection = {
+        "type": "FeatureCollection",
+        "features": features
+        }
+        geojson_data = geojson.loads(geojson.dumps(feature_collection))
+        print(geojson_data)
+        return JsonResponse(geojson_data,safe=False)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 def route_view(request):

@@ -21,7 +21,7 @@ def connect_to_postgres(host, dbname, user, password):
     conn = psycopg2.connect(host=host, dbname=dbname, user=user, password=password)
     return conn
 
-def get_obstacles(type,conn,everything=False):
+def get_obstacles(type, conn, everything=False):
     if everything == True:
         cursor = conn.cursor()
         cursor.execute(f"""SELECT * FROM {type}""")
@@ -33,12 +33,12 @@ def get_obstacles(type,conn,everything=False):
     elif everything == False:
         conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
         cursor = conn.cursor()
-        cursor.execute(f"""SELECT index, ST_AsText(geom),nearest_edge_u,nearest_edge_v,nazov_objektu,predpisana_vypocitana_normalna
+        cursor.execute(f"""SELECT index, ST_AsText(geom),nearest_edge_u,nearest_edge_v,meno,predpisana_vypocitana_normalna
         FROM {type}""")
         obstacles  = cursor.fetchall()
         cursor.close()
 
-        return obstacles 
+        return obstacles
 
 
 
@@ -203,12 +203,10 @@ def update_nearest_edge(conn, point_id, u, v):
     cur.close()
 
 def obstacles_nearest_edge():
-    #get graph from DB to variable graph
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
+    graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True)
 
-    graph = graph_from_db_new("road_network_ba",conn)
-
-    bridge_obstacles = get_obstacles('bridge_obstacles',conn)
+    bridge_obstacles = get_obstacles('bridge_obstacles',conn,everything=False)
 
     for record in bridge_obstacles:
         point_id, point_text, u, v,name,max_weight = record
@@ -227,7 +225,7 @@ def obstacles_nearest_edge():
             print("Error: Unable to parse geometry from text:", point_text)
 
     conn.close()
-#obstacles_nearest_edge()
+# obstacles_nearest_edge()
 
 
 #function for export shortest path to geopackage - for qgis visualisation
@@ -252,51 +250,6 @@ def extract_first_number(text):
     else:
         pass
 
-def plot_graph_obstacles(car_weight):
-    conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
-    bridge_obstacles = get_obstacles('bridge_obstacles',conn,everything=False)
-    obstacles_edge = []
-
-    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True)
-    graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True)
-
-   
-    for record in bridge_obstacles:
-        max_weight = extract_first_number(record[5])
-        if max_weight is not None:
-            if max_weight < car_weight:
-                edge_record = (record[2],record[3])
-                if edge_record[0] is not None and edge_record[1] is not None:
-                    obstacles_edge.append(edge_record)
-   
-    unique = set(obstacles_edge)
-    print(len(unique))
-    print(len(obstacles_edge))
-
-    # graph_obstacles.remove_edges_from(obstacles_edge) 
-
-    # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-
-    # ox.plot_graph(graph, ax=ax1, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
-    # ax1.set_title('Graph')
-
-    # ox.plot_graph(graph_obstacles, ax=ax2, node_color='w', edge_color='r', edge_linewidth=1, node_size=0, show=False)
-    # ax2.set_title('Graph obstacles')
-
-    # plt.show()
-    # for edge in obstacles_edge:
-    #     ec = ['r' if (edge[0]==4515988732 and edge[1]==2021402216) else 'gray' for u, v, k in G.edges(keys=True)]
-
-    # fig, ax = ox.plot_graph(G, node_color='w', node_edgecolor='k', node_size=30, 
-    #                        node_zorder=3, edge_color=ec, edge_linewidth=3)
-  
-
-    # nx.draw(graph_obstacles, with_labels=True, node_size=500, node_color='skyblue', font_size=12, font_weight='bold')
-    # nx.draw_networkx_edges(graph_obstacles, pos=nx.spring_layout(graph_obstacles), edgelist=obstacles_edge, edge_color='red', width=2)
-    # plt.show()
-
-# plot_graph_obstacles(50.0)
-
 
 #function to find the shortest path with obstacles, using graph from postgres DB - for now only plot the graph
 def shortest_path(start,end,car_weight):
@@ -306,9 +259,14 @@ def shortest_path(start,end,car_weight):
     bridge_obstacles = get_obstacles('bridge_obstacles',conn)
     obstacles_edge = []
 
-    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
+    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True, retain_all=True)
     #graph_obstacles_d = ox.get_digraph(graph_obstacles)
-    graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
+    graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True, retain_all=True)
+    # print(graph)
+    # print("-------------------")
+    # print(graph_obstacles.edges)
+
+
 
     # graph_obstacles_proj = ox.project_graph(graph_obstacles)
     # graph_obstacles = ox.consolidate_intersections(graph_obstacles_proj, rebuild_graph=True, tolerance=15, dead_ends=False)
@@ -318,17 +276,21 @@ def shortest_path(start,end,car_weight):
         max_weight = extract_first_number(record[5])
         if max_weight is not None:
             if max_weight < car_weight:
-                edge_record = (record[2],record[3])
-                if edge_record[0] is not None and edge_record[1] is not None:
-                    obstacles_edge.append(edge_record)
-        
-   
-
+                if record[2] is not None and record[3] is not None:
+                    obstacles_edge.append((int(record[2]), int(record[3])))
+    
+    # print("Prekazky - hrany: ", obstacles_edge)
+    # print(len(obstacles_edge))
     graph_obstacles.remove_edges_from(obstacles_edge) 
+    # print("Prekazky: ",graph_obstacles.number_of_edges())
+    # print("Normalny: ",graph.number_of_edges())
 
+    # print(f"Graph obstacles length: {len(graph_obstacles.edges)}")
+    # print(f"Graph length: {len(graph.edges)}")
     dif = nx.difference(graph, graph_obstacles)
+    # print(f"Dif length: {len(dif.edges)}")
 
-    ox.save_graph_geopackage(dif, filepath='graph_dif.gpkg', directed=True)
+    ox.save_graph_geopackage(dif, filepath='hanicka_graph_dif_new.gpkg', directed=True)
 
     
     # fig, ax = ox.plot_graph(dif)
@@ -371,7 +333,7 @@ def shortest_path(start,end,car_weight):
     # # route_map = ox.plot_route_folium(graph_obstacles, shortest_path, tiles = 'openstreetmap', fit_bounds = True )
     # return geojson_geometry
 
-shortest_path((48.1451, 17.1077),(48.1451, 17.1077), 50.0)
+# shortest_path((48.1451, 17.1077),(48.1451, 17.1077), 50.0)
 
 def sp_obstacles(start,end):
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')

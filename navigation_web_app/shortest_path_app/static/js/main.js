@@ -267,13 +267,14 @@ function showObstacles(car_weight) {
     mode: 'same-origin',
     data: JSON.stringify(data),
     success: function(response) {
-      console.log("This is response: " + response);
-      // var geojsonFeature = JSON.parse(response);
-      // console.log(geojsonFeature);
-      // geojsonFeature.features.forEach(point => {
-      //   L.marker([point.geometry.coordinates[1], point.geometry.coordinates[0]]).bindPopup(point.properties.max_weight).addTo(bridgeWeightGroup);
-      //   bridgeWeightGroup.addTo(map);
-      //   });
+      console.log("This is response H: " + response);
+      var geojsonFeature = JSON.parse(response);
+      console.log("-------------------")
+      console.log(geojsonFeature);
+      geojsonFeature.features.forEach(point => {
+        L.marker([point.geometry.coordinates[1], point.geometry.coordinates[0]]).bindPopup(point.properties.max_weight).addTo(bridgeWeightGroup);
+        bridgeWeightGroup.addTo(map);
+        });
     },
     error: function(xhr, errmsg, err) {
       console.log(xhr.status + ": " + xhr.responseText); 

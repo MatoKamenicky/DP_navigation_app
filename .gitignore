@@ -56,3 +56,5 @@ data/
 Shortest_path_jupiter.ipynb
 nearest_node.py
 graph_dif.gpkg
+graph_dif_new.gpkg
+hanicka_graph_dif_new.gpkg
