@@ -12,6 +12,8 @@ from shapely import geometry, ops
 import json
 import taxicab as tc
 import re
+from osmnx import convert
+import pandas as pd 
 
 ox.settings.use_cache = False
 ox.settings.log_console = False
@@ -40,27 +42,6 @@ def get_obstacles(type, conn, everything=False):
 
         return obstacles
 
-
-
-
-
-
-
-
-#New way to save road network to DB - using geodataframe
-def road_network_to_db_gdf(place_name,table):
-    graph  = ox.graph_from_place(place_name, network_type="drive", simplify=True)
-
-    engine = create_engine("postgresql://postgres:postgres@localhost:5432/DP_nav") 
-
-    node_gdf, edge_gdf, weight = mm.nx_to_gdf(graph, spatial_weights=True)
-    print(weight)
-    node_gdf.to_postgis(table + "_nodes", engine, if_exists='replace', index=True, index_label='id', schema='public', dtype=None)
-    edge_gdf.to_postgis(table + "_edges", engine, if_exists='replace', index=True, index_label='id', schema='public', dtype=None)
-
-
-#road_network_to_db_gdf("Bratislava, Slovakia","road_network_BA_gdf")
-
 #-------------------------------------------------------------------------#
 
 def to_db(place_name):
@@ -86,114 +67,32 @@ def to_db(place_name):
 # to_db("Bratislava, Slovakia")
 
 def from_db():
-
     engine = create_engine("postgresql://postgres:postgres@localhost:5432/DP_nav") 
-
     nodes = gpd.read_postgis("SELECT * FROM ba_nodes;", engine, geom_col='geometry')
     edges = gpd.read_postgis("SELECT * FROM ba_edges;", engine, geom_col='geometry')
 
-    nodes["x"] = nodes["geometry"].x
-    nodes["y"] = nodes["geometry"].y
+    G = nx.MultiDiGraph()
 
-    graph = ox.graph_from_gdfs(nodes, edges)
-    # graph = mm.gdf_to_nx(edges)
-    # print(nodes.head())
-    return graph 
+    for index, row in edges.iterrows():
+        G.add_edge(row['u'], row['v'], key=row['key'], osmid=row['osmid'], oneway=row['oneway'], lanes=row['lanes'], highway=row['highway'], name=row['name'], ref=row['ref'], bridge=row['bridge'], width=row['width'], junction=row['junction'], tunnel=row['tunnel'], geometry=row['geometry'])
 
-# from_db()
+    for index, row in nodes.iterrows():
+        G.add_node(row['osmid'], y=row['y'], x=row['x'], street_count=row['street_count'], ref=row['ref'], highway=row['highway'], geometry=row['geometry'])
 
-def plot_graph():
-    graph = from_db()
-    fig,ax = ox.plot_graph(graph)
-    plt.show()
+    node_attrs = {node: {'y': data['y'], 'x': data['x'], 'street_count': data['street_count'], 'ref': data['ref'], 'highway': data['highway'], 'geometry': data['geometry']} for node, data in G.nodes(data=True)}
+    nx.set_node_attributes(G, node_attrs)
 
-# plot_graph()
+    edge_attrs = {(u, v, k): {'osmid': d['osmid'], 'oneway': d['oneway'], 'lanes': d['lanes'], 'highway': d['highway'], 'name': d['name'], 'ref': d['ref'], 'bridge': d['bridge'], 'width': d['width'], 'junction': d['junction'], 'tunnel': d['tunnel'], 'geometry': d['geometry']} for u, v, k, d in G.edges(keys=True, data=True)}
+    nx.set_edge_attributes(G, edge_attrs)
+
+    G.graph['crs'] = edges.crs
+    ox.distance.add_edge_lengths(G)
+    
+    return G
+
+# from_db_gpt()
 
 #-------------------------------------------------------------------------#
-
-
-
-
-#---------------------------------OLD WAY---------------------------------#
-#function to import road network from postgres to python using as text for geometry
-def graph_from_db_new(table, conn):
-    cur = conn.cursor()
-
-    graph = nx.MultiDiGraph()
-
-    #add nodes to the graph
-    nodes_table = table + "_nodes" 
-    cur.execute(sql.SQL(f"""
-        SELECT node_id, lon, lat, ST_AsText(geometry)
-        FROM {nodes_table}
-    """))
-
-    for row in cur.fetchall():
-        node_id, lon, lat, geometry = row
-        node_geometry = loads(geometry)
-        if node_geometry is not None:
-            lon, lat = node_geometry.x, node_geometry.y
-            graph.add_node(node_id, x=lon, y=lat, geometry=node_geometry)
-
-    #add edges to the graph
-    edges_table = table + "_edges" 
-    cur.execute(sql.SQL(f"""
-        SELECT source, target, ST_AsText(geometry)
-        FROM {edges_table}
-    """))
-
-    for row in cur.fetchall():
-        source, target, geometry = row
-        edge_geometry = loads(geometry)
-        if edge_geometry is not None:
-            graph.add_edge(source, target, geometry=edge_geometry)
-
-    cur.close()
-
-    graph.graph["crs"] = "EPSG:4326"
-
-    return graph
-
-
-def graph_from_db(table, conn, include_nodes=False):
-    cur = conn.cursor()
-
-    graph = nx.MultiDiGraph()
-
-    # if include_nodes is True, add nodes to the graph
-    if include_nodes:
-        nodes_table = table + "_nodes" 
-        cur.execute(sql.SQL(f"""
-            SELECT node_id, lon, lat, ST_AsBinary(geometry)
-            FROM {nodes_table}
-        """))
-
-        for row in cur.fetchall():
-            node_id, lon, lat, geometry_wkb = row
-            if geometry_wkb:
-                geometry = wkb.loads(geometry_wkb, hex=True)
-                graph.add_node(node_id, lon=lon, lat=lat, geometry=geometry)
-
-    # add edges to the graph
-    edges_table = table + "_edges" 
-    cur.execute(sql.SQL(f"""
-        SELECT source, target, ST_AsBinary(geometry)
-        FROM {edges_table}
-    """))
-
-    for row in cur.fetchall():
-        source, target, geometry_wkb = row
-        if geometry_wkb:
-            geometry = wkb.loads(geometry_wkb, hex=True)
-            graph.add_edge(source, target, geometry=geometry)
-
-    cur.close()
-
-    graph.graph["crs"] = "EPSG:4326"
-
-    return graph
-
-#---------------------------------OLD WAY---------------------------------#
 
 
 def update_nearest_edge(conn, point_id, u, v):
@@ -378,7 +277,8 @@ def sp(start,end):
     # conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
     #graph = graph_from_db_new("road_network_ba",conn)
 
-    graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
+    # graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
+    graph = from_db()
 
     # Version 1 - using OSMNX library - can use also travel time, not so accurate nearest node
     # Add speeds and travel times to the graph

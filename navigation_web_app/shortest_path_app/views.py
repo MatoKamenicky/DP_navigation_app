@@ -85,7 +85,7 @@ def obstacles_view(request):
                             "coordinates": [lon, lat]
                         },
                         "properties": {
-                            "max_weight:": max_weight_bridge
+                            "max_weight": max_weight_bridge
                         }
                     }
                     features.append(feature)
@@ -114,10 +114,6 @@ def route_view(request):
 
         # route = spo.sp_obstacles(start_point, end_point)
         route = spo.sp(start_point, end_point)
-
-
-        print(route)
-
         return JsonResponse(route,safe=False)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 

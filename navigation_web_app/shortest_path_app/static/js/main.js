@@ -245,13 +245,18 @@ document.getElementById('submit_button').addEventListener('click', function() {
   document.getElementById('carInfoPopup').style.display = 'block';
   var infoPopup = L.divOverlay({
     className: 'info_popup',
-    html: document.getElementById('carInfoPopup').innerHTML = "Car weight: " + car_weight + " kg"
+    html: document.getElementById('carInfoPopup').innerHTML = "Car weight: " + car_weight + " t"
   }).addTo(map);
 });
 
+let obstacleLayer
 let bridgeWeightGroup = L.featureGroup();
 document.getElementById('obstacles_button').addEventListener('click', function() {
   var car_weight = document.getElementById('id_weight').value;
+  if (obstacleLayer) {
+    map.removeLayer(obstacleLayer);
+    obstacleLayer = null;
+  }
   showObstacles(car_weight);
 });
 
@@ -267,14 +272,16 @@ function showObstacles(car_weight) {
     mode: 'same-origin',
     data: JSON.stringify(data),
     success: function(response) {
-      console.log("This is response H: " + response);
-      var geojsonFeature = JSON.parse(response);
-      console.log("-------------------")
-      console.log(geojsonFeature);
-      geojsonFeature.features.forEach(point => {
-        L.marker([point.geometry.coordinates[1], point.geometry.coordinates[0]]).bindPopup(point.properties.max_weight).addTo(bridgeWeightGroup);
-        bridgeWeightGroup.addTo(map);
-        });
+      console.log(response)
+      if (obstacleLayer) {
+        map.removeLayer(obstacleLayer);
+      }
+      obstacleLayer = L.geoJSON(response, {
+        onEachFeature: function(feature, layer) {
+          console.log(feature.properties["max_weight"])
+          layer.bindPopup("Max Weight: " + feature.properties["max_weight"] + " t");
+        }
+      }).addTo(map);
     },
     error: function(xhr, errmsg, err) {
       console.log(xhr.status + ": " + xhr.responseText); 
@@ -282,8 +289,17 @@ function showObstacles(car_weight) {
   }); 
 }
 
+// =================================================================================
+// Code for obstacles ajax
+// console.log("This is response H: ", response);
+      // response.features.forEach(point => {
+      //   bridgeWeightGroup.clearLayers();
+      //   L.marker([point.geometry.coordinates[1], point.geometry.coordinates[0]]).bindPopup(point.properties.max_weight).addTo(bridgeWeightGroup);
+      //   bridgeWeightGroup.addTo(map);
+      // });
+// =================================================================================
 
-      
+
 // var form = document.getElementById('carDimensionsForm');
 // form.addEventListener('submit', function(event) {
 //   // event.preventDefault();
