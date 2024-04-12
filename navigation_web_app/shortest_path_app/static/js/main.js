@@ -226,20 +226,9 @@ function calculateRoute(startPoint, endPoint,car_weight) {
 
 map.on('click', onMapClick);
 
+let obstacleLayer
+
 // Info popup about car category
-
-
-// var infoPopup = L.divOverlay({
-//   className: 'info_popup',
-//   html: document.getElementById('carInfoPopup').innerHTML
-// }).addTo(map);
-
-// map.on('move', function () {
-//   infoPopup.setLatLng(map.getCenter());
-// });
-
-
-
 document.getElementById('submit_button').addEventListener('click', function() {
   var car_weight = document.getElementById('id_weight').value;
   document.getElementById('carInfoPopup').style.display = 'block';
@@ -247,10 +236,14 @@ document.getElementById('submit_button').addEventListener('click', function() {
     className: 'info_popup',
     html: document.getElementById('carInfoPopup').innerHTML = "Car weight: " + car_weight + " t"
   }).addTo(map);
+  console.log("Obstacles:" + obstacleLayer);
+  if (obstacleLayer) {
+    map.removeLayer(obstacleLayer);
+    obstacleLayer = null;
+  }
 });
 
-let obstacleLayer
-let bridgeWeightGroup = L.featureGroup();
+// View obstacles button
 document.getElementById('obstacles_button').addEventListener('click', function() {
   var car_weight = document.getElementById('id_weight').value;
   if (obstacleLayer) {
@@ -278,7 +271,6 @@ function showObstacles(car_weight) {
       }
       obstacleLayer = L.geoJSON(response, {
         onEachFeature: function(feature, layer) {
-          console.log(feature.properties["max_weight"])
           layer.bindPopup("Max Weight: " + feature.properties["max_weight"] + " t");
         }
       }).addTo(map);

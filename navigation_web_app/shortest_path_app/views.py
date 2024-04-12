@@ -112,8 +112,7 @@ def route_view(request):
         start_point = (start_lat, start_lng)
         end_point = (end_lat, end_lng)
 
-        # route = spo.sp_obstacles(start_point, end_point)
-        route = spo.sp(start_point, end_point)
+        route = spo.shortest_path(start_point, end_point, car_weight)
         return JsonResponse(route,safe=False)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
@@ -121,25 +120,3 @@ def route_view(request):
 def custom_404(request, exception):
     return render(request, 'C:\GAK\_ING_studium\ING_3_sem\DP_navigation_app\navigation_web_app\shortest_path_app\templates\404.html', status=404)
 
-
-
-#This view is now not very useful, because it is possible to view the obstacles on the map in the layer control
-def view_obstacles(request):
-    conn = spo.connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
-
-    obstacles = spo.get_obstacles('bridge_obstacles',conn)
-    figure = folium.Figure()
-    m = folium.Map(location=[48.14225666993606, 17.119759122997106], zoom_start=12)
-
-    for record in obstacles:
-        point_id, point_text, u, v,name = record
-        point_geometry = loads(point_text)
-        if point_geometry is not None:
-            lon, lat = point_geometry.x, point_geometry.y
-            folium.Marker(location=[lat, lon], popup=name).add_to(m)
-    
-    m.add_to(figure)
-    figure.render()
-    context={'map':figure}
-
-    return render(request, 'view_obstacles.html', context)
