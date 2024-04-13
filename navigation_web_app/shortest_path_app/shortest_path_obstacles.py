@@ -69,28 +69,28 @@ def from_db():
     nodes = gpd.read_postgis("SELECT * FROM ba_nodes_bbox;", engine, geom_col='geometry')
     edges = gpd.read_postgis("SELECT * FROM ba_edges_bbox;", engine, geom_col='geometry')
 
-    G = nx.MultiDiGraph()
+    graph = nx.MultiDiGraph()
 
     for index, row in edges.iterrows(): 
-        G.add_edge(row['u'], row['v'], key=row['key'], osmid=row['osmid'], lanes=row['lanes'], ref=row['ref'], name=row['name'], highway=row['highway'], maxspeed=row['maxspeed'], oneway=row['oneway'], reversed=row['reversed'], length=row['length'], junction=row['junction'], bridge=row['bridge'], geometry=row['geometry'])
+        graph.add_edge(row['u'], row['v'], key=row['key'], osmid=row['osmid'], lanes=row['lanes'], ref=row['ref'], name=row['name'], highway=row['highway'], maxspeed=row['maxspeed'], oneway=row['oneway'], reversed=row['reversed'], length=row['length'], junction=row['junction'], bridge=row['bridge'], geometry=row['geometry'])
 
     for index, row in nodes.iterrows():
-        G.add_node(row['osmid'], y=row['y'], x=row['x'], street_count=row['street_count'], highway=row['highway'], geometry=row['geometry'])
+        graph.add_node(row['osmid'], y=row['y'], x=row['x'], street_count=row['street_count'], highway=row['highway'], geometry=row['geometry'])
 
-    node_attrs = {node: {'y': data['y'], 'x': data['x'], 'street_count': data['street_count'], 'highway': data['highway'], 'geometry': data['geometry']} for node, data in G.nodes(data=True)}
-    nx.set_node_attributes(G, node_attrs)
+    node_attrs = {node: {'y': data['y'], 'x': data['x'], 'street_count': data['street_count'], 'highway': data['highway'], 'geometry': data['geometry']} for node, data in graph.nodes(data=True)}
+    nx.set_node_attributes(graph, node_attrs)
 
-    edge_attrs = {(u, v, k): {'osmid': d['osmid'], 'oneway': d['oneway'], 'length': d['length'], 'maxspeed': d['maxspeed'], 'lanes': d['lanes'], 'highway': d['highway'], 'name': d['name'], 'ref': d['ref'], 'bridge': d['bridge'], 'junction': d['junction'], 'geometry': d['geometry']} for u, v, k, d in G.edges(keys=True, data=True)}
-    nx.set_edge_attributes(G, edge_attrs)
+    edge_attrs = {(u, v, k): {'osmid': d['osmid'], 'oneway': d['oneway'], 'length': d['length'], 'maxspeed': d['maxspeed'], 'lanes': d['lanes'], 'highway': d['highway'], 'name': d['name'], 'ref': d['ref'], 'bridge': d['bridge'], 'junction': d['junction'], 'geometry': d['geometry']} for u, v, k, d in graph.edges(keys=True, data=True)}
+    nx.set_edge_attributes(graph, edge_attrs)
 
 
-    G.graph['crs'] = edges.crs
-    ox.distance.add_edge_lengths(G)
+    graph.graph['crs'] = edges.crs
+    ox.distance.add_edge_lengths(graph)
     
     # fig,ax = ox.plot_graph(G, node_size=0, edge_linewidth=0.5, edge_color='black', bgcolor='white', show=False)
     # plt.show()
 
-    return G
+    return graph
 
 # from_db()
 
@@ -201,44 +201,6 @@ def shortest_path(start,end,car_weight):
     return geojson_geometry
 
 # shortest_path((48.1451, 17.1077),(48.1451, 17.1077), 50.0)
-
-def sp_obstacles(start,end):
-    conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
-    bridge_obstacles = get_obstacles('bridge_obstacles',conn,everything=False)
-
-    graph_obstacles  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
-
-    bridge_coordinates = []
-    for record in bridge_obstacles:
-        point_id, point_text, u, v,name,max_weight = record
-        point_geometry = loads(point_text)
-        if point_geometry is not None:
-            (lon, lat) = point_geometry.x, point_geometry.y
-            bridge_coordinates.append((lat, lon))
-
-    bridge_nodes = []
-    for lat, lon in bridge_coordinates:
-        point = geometry.Point(lon, lat)
-        nearest_node = ox.distance.nearest_nodes(graph_obstacles, point.x, point.y)
-        bridge_nodes.append(nearest_node)
-
-    bridge_nodes_copy = bridge_nodes.copy()
-    for node in bridge_nodes_copy:
-        if node in graph_obstacles.nodes():
-            for neighbor in graph_obstacles.neighbors(node):
-                graph_obstacles.remove_edge(node, neighbor)
-
-
-    route = tc.distance.shortest_path(graph_obstacles, start, end)
-
-    nodes_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in route[1]]
-
-    multi_line = geometry.MultiLineString([geometry.LineString(nodes_coords), route[2], route[3]])
-    shortest_path_line = ops.linemerge(multi_line)
-
-    geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
-    
-    return geojson_geometry
 
 # Function for calculae shortest path without obstacles - working fine
 def sp(start,end):

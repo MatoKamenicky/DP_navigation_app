@@ -1,13 +1,10 @@
 from django.shortcuts import render, redirect
-import folium
 from . import shortest_path_obstacles as spo
 from .forms import CarDimensionsForm 
 from shapely.wkt import loads
 import geojson
 from django.http import JsonResponse
 import json
-from django.http import HttpResponseRedirect
-
 
 
 def car_dimensions(request):
