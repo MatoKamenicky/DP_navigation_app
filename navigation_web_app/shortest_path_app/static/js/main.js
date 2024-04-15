@@ -227,31 +227,50 @@ function calculateRoute(startPoint, endPoint,car_weight) {
 map.on('click', onMapClick);
 
 let obstacleLayer
+const toggleButton = document.getElementById('toggleButton');
 
 // Info popup about car category
 document.getElementById('submit_button').addEventListener('click', function() {
   var car_weight = document.getElementById('id_weight').value;
+  console.log(toggleButton.checked);
+  if (toggleButton.checked) {
+    console.log(toggleButton.checked);
+    showObstacles(car_weight);
+  }
   document.getElementById('carInfoPopup').style.display = 'block';
   var infoPopup = L.divOverlay({
     className: 'info_popup',
     html: document.getElementById('carInfoPopup').innerHTML = "Car weight: " + car_weight + " t"
   }).addTo(map);
-  console.log("Obstacles:" + obstacleLayer);
-  if (obstacleLayer) {
-    map.removeLayer(obstacleLayer);
-    obstacleLayer = null;
-  }
 });
 
 // View obstacles button
-document.getElementById('obstacles_button').addEventListener('click', function() {
-  var car_weight = document.getElementById('id_weight').value;
+// document.getElementById('obstacles_button').addEventListener('click', function() {
+//   var car_weight = document.getElementById('id_weight').value;
+//   if (obstacleLayer) {
+//     map.removeLayer(obstacleLayer);
+//   }
+//   showObstacles(car_weight);
+// });
+
+// Toggle button for obstacles
+toggleButton.addEventListener('change', function() {
+  if (this.checked) {
+    console.log(toggleButton.checked);
+    var car_weight = document.getElementById('id_weight').value;
+    showObstacles(car_weight);
+  } else {
+      // Do nothing when toggle is off
+      hideObstacles();
+  }
+});
+
+function hideObstacles() {
   if (obstacleLayer) {
     map.removeLayer(obstacleLayer);
-    obstacleLayer = null;
   }
-  showObstacles(car_weight);
-});
+
+}
 
 
 function showObstacles(car_weight) {

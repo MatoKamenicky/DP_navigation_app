@@ -92,7 +92,6 @@ def obstacles_view(request):
         "features": features
         }
         geojson_data = geojson.loads(geojson.dumps(feature_collection))
-        print(geojson_data)
         return JsonResponse(geojson_data,safe=False)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
