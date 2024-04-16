@@ -2,28 +2,10 @@
 var map = L.map('map',{zoomControl: false}).setView([48.14, 17.12], 13);
 L.control.zoom({position: 'bottomright'}).addTo(map);
 L.control.locate({position:'topright'}).addTo(map);
-
-// Geocoder with marker removable on click
-
-var geocoder = L.Control.geocoder({
-  defaultMarkGeocode: false
+var searchControl = L.Control.geocoder({
+  defaultMarkGeocode: false,
+  collapsed: true,
 }).addTo(map);
-
-  var marker;
-
-  geocoder.on('markgeocode', function(e) {
-    if (marker) {
-      map.removeLayer(marker);
-    }
-    marker = L.marker(e.geocode.center).addTo(map);
-  });
-
-  map.on('click', function(e) {
-    if (marker) {
-      map.removeLayer(marker);
-      marker = null;
-    }
-  });
 
 // Add layers
 osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -62,49 +44,10 @@ let overlayMaps = {"Bridge": bridgeFeatureGroup};
 
 const layerControl = L.control.layers(baseMaps,overlayMaps).addTo(map);
 
-
-
-// Marker on click
-
-// function onMapClick(e) {
-//   marker = L.marker([e.latlng.lat , e.latlng.lng])
-//   .bindPopup("You clicked the map at " + e.latlng.toString())
-//   .addTo(map);
-// }
-// map.on('click', onMapClick);
-
-// Popup for markers with button
-// function onMapClick(e) {
-//   var button = L.DomUtil.create('button', 'popup-button');
-//   button.innerHTML = 'Direction from here';
-//   button.id = 'popup_btn';
-
-//   button.addEventListener('click', function() {
-//     alert('Button clicked!');
-//   });
-
-//   marker = L.marker([e.latlng.lat, e.latlng.lng])
-//     .bindPopup("You clicked the map at " + e.latlng.toString() + '<br>').addTo(map)
-//     .bindPopup("You clicked the map at " + e.latlng.toString() + '<br>').addTo(map)
-//     .openPopup()
-//     .bindPopup(button)
-//     .addTo(map);
-// }
-
-// map.on('click', onMapClick);
-
-
 // Start and end point + pass coordinates to django view
 var startPoint = null;
 var endPoint = null;
 
-var greenIcon = L.icon({
-  iconUrl: 'leaf-green.png',
-});
-
-var redIcon = L.icon({
-  iconUrl: 'leaf-green.png',
-});
 
 let routeLayer;
 let route_markers = L.featureGroup().addTo(map);
@@ -125,13 +68,66 @@ var redIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
+let button = L.DomUtil.create('button', 'popup-button');
+button.innerHTML = 'Direction from here';
+button.id = 'popup_btn';
 
+// Geocoder marker with popup button direction from here - same as popup button in marker on click
+searchControl.on('markgeocode', function(e) {
+  if (!startPoint) {
+    startPoint = e.geocode.center;
+    map.setView(startPoint, 13);
+
+    let marker_button = L.marker(startPoint)
+      .addTo(map)
+      .bindPopup(button)
+      .openPopup();
+    route_markers.addLayer(marker_button);
+
+    button.addEventListener('click', function() {
+      route_markers.clearLayers();
+      let marker_start = L.marker(startPoint, { icon: greenIcon })
+        .addTo(map)
+        .bindPopup("Start point")
+        .openPopup();
+      marker_start.addTo(route_markers);
+    });
+
+    function showButton() {
+      document.getElementById('deleteButton').style.display = 'block';
+    }
+
+    document.getElementById('deleteButton').addEventListener('click', function() {
+      route_markers.clearLayers();
+      if (routeLayer) {
+        map.removeLayer(routeLayer);
+        routeLayer = null;
+      }
+      startPoint = null;
+      endPoint = null;
+      this.style.display = 'none';
+    });
+
+    showButton();
+  } else if (!endPoint) {
+    endPoint = e.geocode.center;
+
+    let marker_end = L.marker(endPoint, { icon: redIcon })
+      .addTo(map)
+      .bindPopup("Ending point")
+      .openPopup();
+    marker_end.addTo(route_markers);
+
+    // Calculate route
+    var car_weight = document.getElementById('id_weight').value;
+    let route = calculateRoute(startPoint, endPoint, car_weight);
+    map.closePopup();
+  }
+})
+
+// Marker on click with direction from here popup button
 function onMapClick(e) {
   if (startPoint === null) {
-    let button = L.DomUtil.create('button', 'popup-button');
-    button.innerHTML = 'Direction from here';
-    button.id = 'popup_btn';
-
     startPoint = e.latlng;
     let marker_button = L.marker(startPoint)
       .addTo(map)
@@ -179,6 +175,7 @@ function onMapClick(e) {
   // Calculate route
   var car_weight = document.getElementById('id_weight').value;
   let route = calculateRoute(startPoint, endPoint,car_weight);
+  map.closePopup();
 }
 
 // Functions using AJAX to send data to Django view
@@ -225,6 +222,7 @@ function calculateRoute(startPoint, endPoint,car_weight) {
 }
 
 map.on('click', onMapClick);
+
 
 let obstacleLayer
 const toggleButton = document.getElementById('toggleButton');
@@ -299,25 +297,6 @@ function showObstacles(car_weight) {
     }
   }); 
 }
-
-// =================================================================================
-// Code for obstacles ajax
-// console.log("This is response H: ", response);
-      // response.features.forEach(point => {
-      //   bridgeWeightGroup.clearLayers();
-      //   L.marker([point.geometry.coordinates[1], point.geometry.coordinates[0]]).bindPopup(point.properties.max_weight).addTo(bridgeWeightGroup);
-      //   bridgeWeightGroup.addTo(map);
-      // });
-// =================================================================================
-
-
-// var form = document.getElementById('carDimensionsForm');
-// form.addEventListener('submit', function(event) {
-//   // event.preventDefault();
-//   var weightValue = parseFloat(document.getElementById('id_weight').value);
-//   document.getElementById("carInfoPopup").innerHTML = weightValue;
-// });
-
 
 
 

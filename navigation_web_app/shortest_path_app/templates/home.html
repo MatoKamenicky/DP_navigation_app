@@ -34,9 +34,9 @@
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
-            <p><a href="{% url 'home' %}">Home</a></p>
-            <p><a href="{% url 'route_view' %}">Directions</a> </p>
+            <!-- <p><a href="{% url 'home' %}">Home</a></p> -->
             <form id="carDimensionsForm" method="post" novalidate>
+                <label for="weight">Vehicle weight [t]:</label><br>
                 {% csrf_token %}
                 {{ form.weight }}
             </form>
