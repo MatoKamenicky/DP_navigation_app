@@ -53,8 +53,5 @@ venv.bak/
 # Custom
 cache/
 data/
-Shortest_path_jupiter.ipynb
-nearest_node.py
-graph_dif.gpkg
-graph_dif_new.gpkg
-hanicka_graph_dif_new.gpkg
+shortest_path.py
+pgrouting_start.sql
