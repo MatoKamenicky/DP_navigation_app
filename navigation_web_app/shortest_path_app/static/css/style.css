@@ -3,17 +3,22 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .btn {
-    background-color: rgb(255, 255, 255);
-    border: none; 
-    color: rgb(255, 255, 255);
-    cursor: pointer;
-    /* font-size: 24px; 
-    width: 50px; 
-    height: 50px;  */
+  background-color: #007bff;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  width: 60px; 
+  height: 60px;
+  border-radius: 50%;
 }
 #menu {
     position: absolute;
     z-index: 1000;
+}
+#my-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
 }
 .offcanvas-body {
   padding: 20px;
@@ -180,4 +185,29 @@ input:checked + .slider:before {
 
 .slider.round:before {
   border-radius: 50%;
+}
+/* vehicle weight form */
+#carDimensionsForm {
+  max-width: 400px;
+  margin: 0 auto;
+  background-color: transparent;
+}
+label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+input[type="text"], input[type="number"] {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 30px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+.view-obstacles {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
 }

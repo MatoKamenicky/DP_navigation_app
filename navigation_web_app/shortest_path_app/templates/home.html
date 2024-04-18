@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matko maps</title>
+    <title>Navigation for oversize vehicles</title>
     <link rel="stylesheet" href="{% static '/css/style.css' %}">
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -34,15 +34,13 @@
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
-            <!-- <p><a href="{% url 'home' %}">Home</a></p> -->
             <form id="carDimensionsForm" method="post" novalidate>
                 <label for="weight">Vehicle weight [t]:</label><br>
                 {% csrf_token %}
                 {{ form.weight }}
             </form>
             <p></p><button id="submit_button" type="button" class="obstacles-button">Submit</button></p>
-            <!-- <p></p><button id="obstacles_button" class="obstacles-button">View obstacles</button></p> -->
-            <p>View obstacles for vehicle weight</p>
+            <p class="view-obstacles">View obstacles for vehicle weight</p>
             <label class="switch" >
                 <input type="checkbox" id="toggleButton">
                 <span class="slider round"></span>
@@ -52,7 +50,7 @@
     <div id="container">
         <div id="menu">
             <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvas">
-                <i class="fa fa-bars"></i>
+                <i class="fa fa-bars" style="font-size:30px"></i>
             </button>
         </div>
         <div id="map"></div>

@@ -76,7 +76,7 @@ button.id = 'popup_btn';
 searchControl.on('markgeocode', function(e) {
   if (!startPoint) {
     startPoint = e.geocode.center;
-    map.setView(startPoint, 13);
+    map.setView(startPoint, 18);
 
     let marker_button = L.marker(startPoint)
       .addTo(map)
