@@ -176,25 +176,27 @@ def shortest_path(start,end,car_weight):
 
     # Version 1 - using OSMNX library - can use also travel time, not so accurate nearest node
     # Add speeds and travel times to the graph
-    # graph_obstacles = ox.speed.add_edge_speed(graph_obstacles)
-    # graph_obstacles = ox.speed.add_edge_travel_times(graph_obstacles)
+    graph_obstacles = ox.speed.add_edge_speeds(graph_obstacles)
+    graph_obstacles = ox.speed.add_edge_travel_times(graph_obstacles)
    
     #nearest node to the points of origin and destination
-    # orig = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
-    # dest = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
+    orig = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
+    dest = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
     
-    # nodes = [orig, dest]
-
+    nodes = [orig, dest]
+    
     #Shortest path calculation
-    #shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
+    shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='travel_time',method='dijkstra')
+    shortest_path_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in shortest_path]
+    shortest_path_line = geometry.LineString(shortest_path_coords)
 
     # Version 2 - using taxicab library - cant use travel time, more accurate nearest node
-    route = tc.distance.shortest_path(graph_obstacles, start, end)
+    # route = tc.distance.shortest_path(graph_obstacles, start, end)
 
-    nodes_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in route[1]]
+    # nodes_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in route[1]]
 
-    multi_line = geometry.MultiLineString([geometry.LineString(nodes_coords), route[2], route[3]])
-    shortest_path_line = ops.linemerge(multi_line)
+    # multi_line = geometry.MultiLineString([geometry.LineString(nodes_coords), route[2], route[3]])
+    # shortest_path_line = ops.linemerge(multi_line)
 
     geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
     
