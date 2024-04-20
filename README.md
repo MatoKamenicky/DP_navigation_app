@@ -14,5 +14,21 @@ This repository contains the source code for a navigation application developed 
 ## Requirements
 
 - Python
+- Django
 - PostgreSQL
 - PostGIS
+
+## Getting Started
+
+To run the navigation app locally, follow these steps:
+
+1. **Clone the Repository**: 
+   ```bash
+   git clone https://github.com/MatoKamenicky/DP_navigation_app.git
+
+2. **Navigate to the navigation_web_app**: 
+
+3. **Start the Django Development Server:**: 
+   ```bash
+   python manage.py runserver
+
