@@ -7,6 +7,7 @@ import geopandas as gpd
 from shapely import geometry, ops
 import json
 import taxicab as tc
+from distance import *
 import re
 import matplotlib.pyplot as plt
 
@@ -153,7 +154,7 @@ def extract_first_number(text):
 
 
 # Function to find the shortest path with obstacles, using graph from postgres DB - for now only plot the graph
-def shortest_path(start,end,car_weight):
+def shortest_path(start,end, car_weight, type):
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
     bridge_obstacles = get_obstacles('bridge_obstacles',conn)
     obstacles_edge = []
@@ -180,23 +181,30 @@ def shortest_path(start,end,car_weight):
     graph_obstacles = ox.speed.add_edge_travel_times(graph_obstacles)
    
     #nearest node to the points of origin and destination
-    orig = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
-    dest = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
+    # orig = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
+    # dest = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
     
-    nodes = [orig, dest]
+    # nodes = [orig, dest]
     
-    #Shortest path calculation
-    shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='travel_time',method='dijkstra')
-    shortest_path_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in shortest_path]
-    shortest_path_line = geometry.LineString(shortest_path_coords)
+    # #Shortest path calculation
+    # shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='travel_time',method='dijkstra')
+    # shortest_path_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in shortest_path]
+    # shortest_path_line = geometry.LineString(shortest_path_coords)
 
     # Version 2 - using taxicab library - cant use travel time, more accurate nearest node
     # route = tc.distance.shortest_path(graph_obstacles, start, end)
 
-    # nodes_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in route[1]]
+    if type == 'length':
+        route = shortest_path(graph_obstacles, start, end, type='length')
+    elif type == 'time':
+        route = shortest_path(graph_obstacles, start, end, type='time')
+    else:
+        route = shortest_path(graph_obstacles, start, end, type='length')
 
-    # multi_line = geometry.MultiLineString([geometry.LineString(nodes_coords), route[2], route[3]])
-    # shortest_path_line = ops.linemerge(multi_line)
+    nodes_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in route[1]]
+
+    multi_line = geometry.MultiLineString([geometry.LineString(nodes_coords), route[2], route[3]])
+    shortest_path_line = ops.linemerge(multi_line)
 
     geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
     

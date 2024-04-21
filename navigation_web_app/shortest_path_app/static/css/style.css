@@ -12,8 +12,8 @@ body {
   border-radius: 50%;
 }
 #menu {
-    position: absolute;
-    z-index: 1000;
+  position: absolute;
+  z-index: 1000;
 }
 #my-title {
   font-size: 20px;

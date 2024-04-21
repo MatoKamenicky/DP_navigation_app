@@ -258,7 +258,6 @@ toggleButton.addEventListener('change', function() {
     var car_weight = document.getElementById('id_weight').value;
     showObstacles(car_weight);
   } else {
-      // Do nothing when toggle is off
       hideObstacles();
   }
 });
