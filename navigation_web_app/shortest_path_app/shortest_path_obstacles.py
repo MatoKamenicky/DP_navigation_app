@@ -7,9 +7,11 @@ import geopandas as gpd
 from shapely import geometry, ops
 import json
 import taxicab as tc
-from distance import *
+from . import distance as dist
 import re
 import matplotlib.pyplot as plt
+# import sys
+# print(sys.path)
 
 ox.settings.use_cache = False
 ox.settings.log_console = False
@@ -195,11 +197,11 @@ def shortest_path(start,end, car_weight, type):
     # route = tc.distance.shortest_path(graph_obstacles, start, end)
 
     if type == 'length':
-        route = shortest_path(graph_obstacles, start, end, type='length')
+        route = dist.shortest_path(graph_obstacles, start, end, type='length')
     elif type == 'time':
-        route = shortest_path(graph_obstacles, start, end, type='time')
+        route = dist.shortest_path(graph_obstacles, start, end, type='time')
     else:
-        route = shortest_path(graph_obstacles, start, end, type='length')
+        route = dist.shortest_path(graph_obstacles, start, end, type='length')
 
     nodes_coords = [(graph_obstacles.nodes[node]['x'], graph_obstacles.nodes[node]['y']) for node in route[1]]
 
@@ -207,8 +209,13 @@ def shortest_path(start,end, car_weight, type):
     shortest_path_line = ops.linemerge(multi_line)
 
     geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
+
+    route_length = int(sum(ox.routing.route_to_gdf(graph_obstacles, route[1], weight="length")["length"]))
+    route_time = int(sum(ox.routing.route_to_gdf(graph_obstacles, route[1], weight="travel_time")["travel_time"]))
+
+
     
-    return geojson_geometry
+    return geojson_geometry, route_length, route_time
 
 # shortest_path((48.1451, 17.1077),(48.1451, 17.1077), 50.0)
 

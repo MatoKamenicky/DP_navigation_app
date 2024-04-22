@@ -1,11 +1,11 @@
 // Map + zoom +location
 var map = L.map('map',{zoomControl: false}).setView([48.14, 17.12], 13);
-L.control.zoom({position: 'bottomright'}).addTo(map);
 L.control.locate({position:'topright'}).addTo(map);
 var searchControl = L.Control.geocoder({
   defaultMarkGeocode: false,
   collapsed: true,
 }).addTo(map);
+L.control.zoom({position: 'bottomleft'}).addTo(map);
 
 // Add layers
 osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -72,6 +72,16 @@ let button = L.DomUtil.create('button', 'popup-button');
 button.innerHTML = 'Direction from here';
 button.id = 'popup_btn';
 
+// Toggle button for select path type - time or distance
+var pathTypeSelect = document.getElementById('pathType');
+function getToggleValue() {
+  if (pathTypeSelect.checked) {
+      return "time";
+  } else {
+      return "length";
+    }
+};
+
 // Geocoder marker with popup button direction from here - same as popup button in marker on click
 searchControl.on('markgeocode', function(e) {
   if (!startPoint) {
@@ -114,13 +124,15 @@ searchControl.on('markgeocode', function(e) {
 
     let marker_end = L.marker(endPoint, { icon: redIcon })
       .addTo(map)
-      .bindPopup("Ending point")
+      .bindPopup("End point")
       .openPopup();
     marker_end.addTo(route_markers);
 
     // Calculate route
-    var car_weight = document.getElementById('id_weight').value;
-    let route = calculateRoute(startPoint, endPoint, car_weight);
+    let type = getToggleValue();
+    console.log(type);
+    let car_weight = document.getElementById('id_weight').value;
+    let route = calculateRoute(startPoint, endPoint, car_weight, type);
     map.closePopup();
   }
 })
@@ -167,22 +179,23 @@ function onMapClick(e) {
     endPoint = e.latlng;
     let marker_end = L.marker(endPoint,{icon: redIcon})
       .addTo(map)
-      .bindPopup("Ending point")
+      .bindPopup("End point")
       .openPopup();
     marker_end.addTo(route_markers);
   }
 
   // Calculate route
-  var car_weight = document.getElementById('id_weight').value;
-  let route = calculateRoute(startPoint, endPoint,car_weight);
+  let type = getToggleValue();
+  console.log(type);
+  let car_weight = document.getElementById('id_weight').value;
+  let route = calculateRoute(startPoint, endPoint, car_weight, type);
   map.closePopup();
 }
 
 // Functions using AJAX to send data to Django view
-function calculateRoute(startPoint, endPoint,car_weight) {
+function calculateRoute(startPoint, endPoint, car_weight, type) {
   startPoint_route = [startPoint.lng, startPoint.lat];
   endPoint_route = [endPoint.lng, endPoint.lat];
-
 
   $('#loading-icon').show();
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -191,7 +204,8 @@ function calculateRoute(startPoint, endPoint,car_weight) {
     'start_lon': startPoint.lng,
     'end_lat': endPoint.lat,
     'end_lon': endPoint.lng,
-    'car_weight': car_weight
+    'car_weight': car_weight,
+    'type': type
   };
 
   $.ajax({
@@ -201,8 +215,16 @@ function calculateRoute(startPoint, endPoint,car_weight) {
     mode: 'same-origin',
     data: JSON.stringify(data),
     success: function(response) {
-      var geojsonFeature = JSON.parse(response);
-      var myStyle = {
+      console.log(response);
+      let route_all = response;
+      let route = JSON.parse(route_all.route);
+      let route_length = route_all.length;
+      let route_time = route_all.time;
+
+      console.log("Route length: " + route_length + " m");
+      console.log("Route time: " + route_time + " s");
+
+      let myStyle = {
         "color": "#007bff",
         "weight": 7,
         "opacity": 0.75
@@ -210,9 +232,12 @@ function calculateRoute(startPoint, endPoint,car_weight) {
       if (routeLayer) {
         map.removeLayer(routeLayer);
       }
-      routeLayer = L.geoJSON(geojsonFeature, {
+      routeLayer = L.geoJSON(route, {
         style: myStyle
-      }).addTo(map);
+        })
+        .bindPopup(route_length + " m ," +  route_time + " s")
+        .addTo(map)
+        .openPopup();
     },
     error: function(xhr, errmsg, err) {
       console.log(xhr.status + ": " + xhr.responseText); 

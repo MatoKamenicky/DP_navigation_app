@@ -104,13 +104,23 @@ def route_view(request):
         end_lat = body['end_lat']
         end_lng = body['end_lon']
         car_weight = float(body['car_weight'])
+        type = body['type']
 
         start_point = (start_lat, start_lng)
         end_point = (end_lat, end_lng)
 
-        route = spo.shortest_path(start_point, end_point, car_weight)
-        return JsonResponse(route,safe=False)
+        route, route_length, route_time = spo.shortest_path(start_point, end_point, car_weight, type)
+        
+        route_all = {
+            'route': route,
+            'length': route_length,
+            'time': route_time
+        }
+
+
+        return JsonResponse(route_all, safe=False)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
 
 
 def custom_404(request, exception):
