@@ -10,8 +10,6 @@ import taxicab as tc
 from . import distance as dist
 import re
 import matplotlib.pyplot as plt
-# import sys
-# print(sys.path)
 
 ox.settings.use_cache = False
 ox.settings.log_console = False
@@ -89,9 +87,6 @@ def from_db():
 
     graph.graph['crs'] = edges.crs
     ox.distance.add_edge_lengths(graph)
-    
-    # fig,ax = ox.plot_graph(G, node_size=0, edge_linewidth=0.5, edge_color='black', bgcolor='white', show=False)
-    # plt.show()
 
     return graph
 
@@ -107,7 +102,6 @@ def update_nearest_edge(conn, point_id, u, v):
 # Function for finding nearest edge of the graph to the obstacles
 def obstacles_nearest_edge():
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
-    # graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=False, truncate_by_edge=True)
     graph = from_db()
 
     bridge_obstacles = get_obstacles('bridge_obstacles',conn,everything=False)
@@ -218,35 +212,3 @@ def shortest_path(start,end, car_weight, type):
     return geojson_geometry, route_length, route_time
 
 # shortest_path((48.1451, 17.1077),(48.1451, 17.1077), 50.0)
-
-# Function for calculae shortest path without obstacles - working fine
-def sp(start,end):
-    # graph  = ox.graph_from_place("Bratislava, Slovakia", network_type="drive", simplify=True, truncate_by_edge=True)
-    graph = from_db()
-
-    # Version 1 - using OSMNX library - can use also travel time, not so accurate nearest node
-    # Add speeds and travel times to the graph
-    # graph_obstacles = ox.speed.add_edge_speed(graph_obstacles)
-    # graph_obstacles = ox.speed.add_edge_travel_times(graph_obstacles)
- 
-    #nearest node to the points of origin and destination
-    # orig = ox.distance.nearest_nodes(graph_obstacles, start[1], start[0])
-    # dest = ox.distance.nearest_nodes(graph_obstacles, end[1], end[0])
-    
-    # nodes = [orig, dest]
-
-    #Shortest path calculation
-    #shortest_path = nx.shortest_path(graph_obstacles, nodes[0], nodes[1], weight='length',method='dijkstra')
-
-
-    # Version 2 - using taxicab library - cant use travel time, more accurate nearest node
-    route = tc.distance.shortest_path(graph, start, end)
-
-    nodes_coords = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in route[1]]
-
-    multi_line = geometry.MultiLineString([geometry.LineString(nodes_coords), route[2], route[3]])
-    shortest_path_line = ops.linemerge(multi_line)
-
-    geojson_geometry = json.dumps(shortest_path_line.__geo_interface__)
-    
-    return geojson_geometry
