@@ -31,26 +31,27 @@ body {
 
 .offcanvas-body a {
   display: flex;
-  align-items: center;
+  align-items: left;
+  text-align: left;
   text-decoration: none;
   padding: 5px;
   transition: background-color 0.3s;
 }
 
 .offcanvas-body a:hover {
-  background-color: #f0f0f0; /* Change background color on hover */
+  background-color: #f0f0f0;
 }
 
 .offcanvas-body a i {
-  margin-right: 10px; /* Adjust spacing between icon and text */
+  margin-right: 10px;
 }
 
 .offcanvas-body a span {
-  color: #333; /* Default color for text */
+  color: #333;
 }
 
 .offcanvas-body a:hover span {
-  color: #007bff; /* Change text color on hover */
+  color: #007bff;
 }
 #loading-icon {
   position: fixed;
@@ -188,9 +189,10 @@ input:checked + .slider:before {
 }
 /* vehicle weight form */
 #carDimensionsForm {
-  max-width: 400px;
+  max-width: 600px;
   margin: 0 auto;
   background-color: transparent;
+  text-align: left;
 }
 label {
   font-size: 16px;
@@ -210,4 +212,54 @@ input[type="text"], input[type="number"] {
     font-size: 16px;
     font-weight: bold;
     color: #333;
+}
+/* toggle button for shortest path type */
+.toggleCheckbox {
+  display: none;
+}
+.toggleContainer {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  width: fit-content;
+  border: 3px solid #007bff;
+  border-radius: 20px;
+  background: #007bff;
+  font-weight: bold;
+  color: #007bff;
+  cursor: pointer;
+}
+.toggleContainer::before {
+  content: '';
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  left: 0%;
+  border-radius:20px;
+  background: white;
+  transition: all 0.3s;
+}
+.toggleContainer div {
+  padding: 6px;
+  text-align: center;
+  z-index: 1;
+}
+.toggleCheckbox:checked + .toggleContainer::before {
+  left: 50%;
+}
+.toggleCheckbox:checked + .toggleContainer div:first-child{
+  color: white;
+  transition: color 0.3s;
+}
+.toggleCheckbox:checked + .toggleContainer div:last-child{
+  color: #007bff;
+  transition: color 0.3s;
+}
+.toggleCheckbox + .toggleContainer div:first-child{
+  color: #007bff;
+  transition: color 0.3s;
+}
+.toggleCheckbox + .toggleContainer div:last-child{
+  color: white;
+  transition: color 0.3s;
 }

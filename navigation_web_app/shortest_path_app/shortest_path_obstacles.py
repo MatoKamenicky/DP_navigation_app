@@ -150,7 +150,7 @@ def extract_first_number(text):
 
 
 # Function to find the shortest path with obstacles, using graph from postgres DB - for now only plot the graph
-def shortest_path(start,end, car_weight, type):
+def shortest_path(start, end, car_weight, type):
     conn = connect_to_postgres(host='localhost', dbname='DP_nav', user='postgres', password='postgres')
     bridge_obstacles = get_obstacles('bridge_obstacles',conn)
     obstacles_edge = []

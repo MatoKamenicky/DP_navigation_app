@@ -111,6 +111,9 @@ def route_view(request):
 
         route, route_length, route_time = spo.shortest_path(start_point, end_point, car_weight, type)
         
+        route_length = round(route_length / 1000, 2)
+        route_time = round(route_time / 60, 0)
+
         route_all = {
             'route': route,
             'length': route_length,

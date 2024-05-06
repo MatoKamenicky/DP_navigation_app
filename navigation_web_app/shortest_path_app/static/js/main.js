@@ -221,8 +221,8 @@ function calculateRoute(startPoint, endPoint, car_weight, type) {
       let route_length = route_all.length;
       let route_time = route_all.time;
 
-      console.log("Route length: " + route_length + " m");
-      console.log("Route time: " + route_time + " s");
+      console.log("Route length: " + route_length + " km");
+      console.log("Route time: " + route_time + " min");
 
       let myStyle = {
         "color": "#007bff",
@@ -235,7 +235,7 @@ function calculateRoute(startPoint, endPoint, car_weight, type) {
       routeLayer = L.geoJSON(route, {
         style: myStyle
         })
-        .bindPopup(route_length + " m ," +  route_time + " s")
+        .bindPopup(route_length + " km ," +  route_time + " min")
         .addTo(map)
         .openPopup();
     },

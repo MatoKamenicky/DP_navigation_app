@@ -34,7 +34,7 @@
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
-            <form id="carDimensionsForm" method="post" novalidate>
+            <form id="carDimensionsForm" method="post" novalidate style="text-align: left;">
                 <label for="weight">Vehicle weight [t]:</label><br>
                 {% csrf_token %}
                 {{ form.weight }}
@@ -45,10 +45,11 @@
                 <input type="checkbox" id="toggleButton">
                 <span class="slider round"></span>
             </label>
-            <p class="view-obstacles">Shortest path type</p>
-            <label class="switch" >
-                <input type="checkbox" id="pathType" value="on">
-                <span class="slider round"></span>
+            <p></p><p class="view-obstacles">Shortest path type</p>
+            <input type="checkbox" id="pathType" class="toggleCheckbox" value="on"/>
+            <label for="pathType" class='toggleContainer'>
+              <div>Distance</div>   
+              <div>Time</div>
             </label>
         </div>
     </div>
